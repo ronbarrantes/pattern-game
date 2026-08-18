@@ -14,11 +14,6 @@
 // if player loses then it displays a "sad" sequece of colors
 // if player wins the 32 different sequence then it diplays a "happy" sequence
 //
-//
-//
-//
-//
-//
 
 /// game_setup
 void game_setup(int *game_length, char *char_list) {
@@ -32,7 +27,7 @@ bool pattern(int *curr_turn, char *char_list) {
   int curr_guess;
 
   printf("Nums: ");
-  for (int itr = 0; itr < 5; itr++) {
+  for (int itr = 0; itr < *curr_turn; itr++) {
     printf("%d ", char_list[itr]);
   }
   printf("\n\n");
@@ -51,42 +46,30 @@ bool pattern(int *curr_turn, char *char_list) {
 
     printf("Num: %d\n", curr_guess);
   }
-
   return true;
 }
 
-/// game_loop
-
-// bool game_loop(int *i) {
-//   int game_length = 5;
-//   char char_list[game_length];
-
-//   for (int l_item = 0; l_item < game_length; l_item++) {
-//     char_list[l_item] = l_item;
-//   }
-
-//   while (*i < game_length) {
-//     printf("gimme the number: ");
-//     scanf("%d", i);
-
-//     int ch;
-//     while ((ch = getchar()) != '\n' && ch != EOF) {
-//     }
-
-//     printf("\nthe num is %d\n", *i);
-//   }
-
-//   return true;
-// }
-
 int main(void) {
-  int game_length = 5;
-  int curr_turn = 0;
+  int game_length = 3;
+  int curr_turn = 1;
   char char_list[game_length];
 
   // setup
   game_setup(&game_length, char_list);
-  pattern(&curr_turn, char_list);
+
+  // the loop
+
+  while (curr_turn <= game_length) {
+    bool is_pattern_correct = pattern(&curr_turn, char_list);
+    if (!is_pattern_correct) {
+      printf("you lose\n");
+      return 0;
+    } else {
+      printf("next\n");
+    }
+    curr_turn++;
+  }
+  printf("you win\n");
 
   return 0;
 }
