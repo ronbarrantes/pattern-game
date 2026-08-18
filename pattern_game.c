@@ -1,5 +1,7 @@
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
 
 /** IO LOGIC **/
 
@@ -16,31 +18,34 @@
 //
 
 /// game_setup
-void game_setup(int *game_length, char *char_list) {
+void game_init(int *game_length, char *num_list) {
+  int num_pool[4] = {1, 2, 3, 4};
+
   for (int l_item = 0; l_item < *game_length; l_item++) {
-    char_list[l_item] = l_item;
+    int idx = rand() % 4;
+    num_list[l_item] = num_pool[idx];
   }
 }
 
 /// pattern
-bool pattern(int *curr_turn, char *char_list) {
+bool pattern(int *curr_turn, char *num_list) {
   int curr_guess;
 
   printf("Nums: ");
-  for (int itr = 0; itr < *curr_turn; itr++) {
-    printf("%d ", char_list[itr]);
+  for (int idx = 0; idx < *curr_turn; idx++) {
+    printf("%d ", num_list[idx]);
   }
   printf("\n\n");
 
   printf("gimme the numbers: ");
-  for (int itr = 0; itr < *curr_turn; itr++) {
+  for (int idx = 0; idx < *curr_turn; idx++) {
     scanf("%d", &curr_guess);
 
     int ch;
     while ((ch = getchar()) != '\n' && ch != EOF) {
     }
 
-    if (curr_guess != char_list[itr]) {
+    if (curr_guess != num_list[idx]) {
       return false;
     }
 
@@ -50,17 +55,18 @@ bool pattern(int *curr_turn, char *char_list) {
 }
 
 int main(void) {
+
   int game_length = 3;
   int curr_turn = 1;
-  char char_list[game_length];
+  char num_list[game_length];
 
   // setup
-  game_setup(&game_length, char_list);
+  srand((unsigned)time(NULL));
+  game_init(&game_length, num_list);
 
   // the loop
-
   while (curr_turn <= game_length) {
-    bool is_pattern_correct = pattern(&curr_turn, char_list);
+    bool is_pattern_correct = pattern(&curr_turn, num_list);
     if (!is_pattern_correct) {
       printf("you lose\n");
       return 0;
