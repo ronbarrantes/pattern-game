@@ -12,8 +12,17 @@
 // maybe I can have up to 32
 // if player loses then it displays a "sad" sequece of colors
 // if player wins the 32 different sequence then it diplays a "happy" sequence
+//
+//
+//
 
-int main() {
+int main(void) {
+  int the_num = 0;
+  while (1) {
+    printf("gimme the number: ");
+    scanf("%d", the_num);
+    printf("the num is %d\n", the_num);
+  }
   printf("Hello Pattern Game\n");
   return 0;
 }
