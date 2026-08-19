@@ -1,0 +1,6 @@
+CompileFlags:
+  Add:
+    - "-I/usr/avr/include"
+    - "-I/usr/lib/gcc/avr/16.1.0/include"
+    - "-I/usr/lib/gcc/avr/16.1.0/include-fixed"
+    - "-D__AVR_ATtiny85__"
