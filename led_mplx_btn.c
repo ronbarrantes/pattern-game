@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <util/delay.h>
 
-#define STARTUP_DELAY 50
+#define STARTUP_DELAY 100
 
 /*
 DDRB   → Should this pin be INPUT or OUTPUT?
@@ -46,15 +46,14 @@ int main(void) {
   DDRB |= (1 << PB0);
 
   bool is_pressed = false;
-  uint8_t pb_arr[4] = {PB0, PB1, PB2, PB3};
-
+  // uint8_t pb_arr[4] = {PB0}; // will have PB1, PB2, PB3
   startup_sequence();
 
   while (true) {
-    for (uint8_t i = 0; i < 4; i++) {
-      is_pressed = check_pressed(pb_arr[i]);
-      set_led(pb_arr[i], is_pressed);
-    }
+    //    for (uint8_t i = 0; i < 4; i++) {
+    is_pressed = check_pressed(PB0);
+    set_led(PB0, is_pressed);
+    //   }
   }
   return 0;
 }
