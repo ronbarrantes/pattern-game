@@ -3,6 +3,12 @@
 #include <stdlib.h>
 #include <time.h>
 
+#include <avr/io.h>
+#include <stdbool.h>
+#include <util/delay.h>
+
+#define STARTUP_DELAY 100
+
 /** IO LOGIC **/
 
 /** GAME LOGIC **/
