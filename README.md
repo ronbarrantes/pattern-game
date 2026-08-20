@@ -1,3 +1,3 @@
-# Dragonfly
+# Pattern Game
 
-This is some code for a firefly that I'll be building
+This is some code for a simon says style game that I'll be building
