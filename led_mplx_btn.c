@@ -14,11 +14,15 @@ PINB   → What is currently coming INTO the pin?
 void startup_sequence(void) {
   for (int i = 0; i < 3; i++) {
     // // LED ON
-    PORTB |= (1 << PB0);
+    // PB0 sinks current
+    PORTB &= ~(1 << PB0);
+    DDRB |= (1 << PB0);
     _delay_ms(STARTUP_DELAY);
 
     // // LED OFF
-    PORTB &= ~(1 << PB0);
+    // PB0 is an input with its pull-up enabled
+    DDRB &= ~(1 << PB0);
+    PORTB |= (1 << PB0);
     _delay_ms(STARTUP_DELAY);
   }
 }
@@ -33,16 +37,17 @@ bool check_pressed(uint8_t pin) {
 
 void set_led(uint8_t pin, bool state) {
   if (state) {
-    PORTB |= (1 << pin);
-  } else {
     PORTB &= ~(1 << pin);
+    DDRB |= (1 << pin); // output
+  } else {
+    DDRB &= ~(1 << pin);
+    PORTB |= (1 << pin);
   }
-
-  DDRB |= (1 << pin); // output
 }
 
 int main(void) {
   // PB0 is output
+
   DDRB |= (1 << PB0);
 
   bool is_pressed = false;
