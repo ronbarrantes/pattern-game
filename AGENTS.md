@@ -75,3 +75,7 @@ If providing code examples:
 ## Academic Integrity
 
 Remember: The goal is for students to learn by doing, not by watching an AI generate solutions. When in doubt, explain more and code less.
+
+## Writing skill
+
+For user-facing prose, documentation, summaries, and messages, follow `.claude/skills/unslop/SKILL.md`.
