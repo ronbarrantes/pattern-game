@@ -27,10 +27,11 @@ void startup_sequence(uint8_t pin_arr[], uint8_t pb_lenght) {
     _delay_ms(STARTUP_DELAY);
 
     // LED off
-    set_led(pin_arr[i], true);
+    set_led(pin_arr[i], false);
     _delay_ms(STARTUP_DELAY);
   }
 
+  // a tiny little break
   _delay_ms(STARTUP_DELAY * 3);
 
   for (int i = pb_lenght - 1; i >= 0; i--) {
@@ -39,7 +40,7 @@ void startup_sequence(uint8_t pin_arr[], uint8_t pb_lenght) {
     _delay_ms(STARTUP_DELAY);
 
     // LED off
-    set_led(pin_arr[i], true);
+    set_led(pin_arr[i], false);
     _delay_ms(STARTUP_DELAY);
   }
 }
