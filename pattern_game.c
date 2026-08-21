@@ -1,4 +1,5 @@
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -7,21 +8,50 @@
 #include <stdbool.h>
 #include <util/delay.h>
 
-#define STARTUP_DELAY 100
+#define STARTUP_DELAY 50
 
-/** IO LOGIC **/
+void set_led(uint8_t pin, bool state) {
+  if (state) {
+    PORTB &= ~(1 << pin);
+    DDRB |= (1 << pin);
+  } else {
+    DDRB &= ~(1 << pin);
+    PORTB |= (1 << pin);
+  }
+}
 
-/** GAME LOGIC **/
-// game starts
-// start sequence (lights up the LEDs 3 TIMES)
-//
-// there is sequence that starts with 3 colors
-// then 4 colors, then 5 colors and so on and so forth
-//
-// maybe I can have up to 32
-// if player loses then it displays a "sad" sequece of colors
-// if player wins the 32 different sequence then it diplays a "happy" sequence
-//
+void startup_sequence(uint8_t pin_arr[], uint8_t pb_lenght) {
+  for (int i = 0; i < pb_lenght; i++) {
+    // LED on
+    set_led(pin_arr[i], true);
+    _delay_ms(STARTUP_DELAY);
+
+    // LED off
+    set_led(pin_arr[i], true);
+    _delay_ms(STARTUP_DELAY);
+  }
+
+  _delay_ms(STARTUP_DELAY * 3);
+
+  for (int i = pb_lenght - 1; i >= 0; i--) {
+    // LED on
+    set_led(pin_arr[i], true);
+    _delay_ms(STARTUP_DELAY);
+
+    // LED off
+    set_led(pin_arr[i], true);
+    _delay_ms(STARTUP_DELAY);
+  }
+}
+
+bool check_pressed(uint8_t pin) {
+  set_led(pin, false);
+  _delay_ms(5);
+
+  return !(PINB & (1 << pin));
+}
+
+// CONTINUE HERE
 
 /// game_setup
 void game_init(int *game_length, char *num_list) {
