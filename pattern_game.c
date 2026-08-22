@@ -88,29 +88,29 @@ bool pattern(uint8_t pattern_list[], uint8_t curr_turn, uint8_t pb_arr[],
   sequence_light(pattern_list, curr_turn);
 
   // READ THE BUTTONS
-
   for (int idx = 0; idx < curr_turn; idx++) {
+    bool got_press = false;
 
-    scanf("%c", &curr_guess);
+    while (!got_press) {
+      for (uint8_t j = 0; j < pb_length; j++) {
+        if (check_pressed(pb_arr[j])) {
+          curr_guess = pb_arr[j];
+          got_press = true;
+          break;
+        }
+      }
+    }
 
-    int ch;
-    while ((ch = getchar()) != '\n' && ch != EOF) {
+    while (check_pressed(curr_guess)) {
+      // Wait for release so this press is counted once.
     }
 
     if (curr_guess != pattern_list[idx]) {
+      /// SAD PATTERN
       return false;
     }
-
-    for (uint8_t j = 0; j < pb_length; j++) {
-      is_pressed = check_pressed(pb_arr[j]);
-
-      set_led(pb_arr[i], is_pressed);
-
-      if (pb_arr[i] != pattern_list[i]) {
-        return false;
-      }
-    }
   }
+
   return true;
 }
 
@@ -137,7 +137,8 @@ int main(void) {
 
   // the loop
   while (curr_turn <= game_length) {
-    bool is_pattern_correct = pattern(pattern_list, curr_turn);
+    bool is_pattern_correct =
+        pattern(pattern_list, curr_turn, pb_arr, pb_length);
     if (!is_pattern_correct) {
       printf("you lose\n");
       /// PLAY SAD ANIMATION
