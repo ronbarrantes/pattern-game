@@ -21,6 +21,13 @@ typedef struct {
 
 uint8_t pb_arr[] = {RED_LED, YELLOW_LED, GREEN_LED, BLUE_LED};
 
+void delay_ms(uint16_t duration_ms) {
+  while (duration_ms > 0) {
+    _delay_ms(1);
+    duration_ms--;
+  }
+}
+
 LightPattern startup_pattern[] = {
     {RED_LED, SHORT_DELAY},
     {YELLOW_LED, SHORT_DELAY},
@@ -62,7 +69,7 @@ void set_led(uint8_t pin, bool state) {
 
 bool check_pressed(uint8_t pin) {
   set_led(pin, false);
-  _delay_ms(5);
+  delay_ms(5);
 
   return !(PINB & (1 << pin));
 }
@@ -70,40 +77,40 @@ bool check_pressed(uint8_t pin) {
 void startup_sequence(uint8_t pin_arr[], uint8_t pb_length) {
   for (int i = 0; i < pb_length; i++) {
     set_led(pin_arr[i], true);
-    _delay_ms(SHORT_DELAY);
+    delay_ms(SHORT_DELAY);
 
     set_led(pin_arr[i], false);
-    _delay_ms(SHORT_DELAY);
+    delay_ms(SHORT_DELAY);
   }
 
-  _delay_ms(SHORT_DELAY * 3);
+  delay_ms(SHORT_DELAY * 3);
 
   for (int i = pb_length - 1; i >= 0; i--) {
     set_led(pin_arr[i], true);
-    _delay_ms(SHORT_DELAY);
+    delay_ms(SHORT_DELAY);
 
     set_led(pin_arr[i], false);
-    _delay_ms(SHORT_DELAY);
+    delay_ms(SHORT_DELAY);
   }
 }
 
 void light_pattern(LightPattern pattern[], uint8_t pattern_length) {
   for (int i = 0; i < pattern_length; i++) {
     set_led(pattern[i].led, true);
-    _delay_ms(pattern[i].duration);
+    delay_ms(pattern[i].duration);
 
     set_led(pattern[i].led, false);
-    _delay_ms(pattern[i].duration);
+    delay_ms(pattern[i].duration);
   }
 }
 
 void sequence_light(uint8_t pattern_list[], uint8_t curr_turn) {
   for (int i = 0; i < curr_turn; i++) {
     set_led(pattern_list[i], true);
-    _delay_ms(LONG_DELAY);
+    delay_ms(LONG_DELAY);
 
     set_led(pattern_list[i], false);
-    _delay_ms(LONG_DELAY);
+    delay_ms(LONG_DELAY);
   }
 }
 
