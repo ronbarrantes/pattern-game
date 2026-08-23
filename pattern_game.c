@@ -21,6 +21,7 @@ typedef struct {
 
 uint8_t pb_arr[] = {RED_LED, YELLOW_LED, GREEN_LED, BLUE_LED};
 
+
 void delay_ms(uint16_t duration_ms) {
   while (duration_ms > 0) {
     _delay_ms(1);
@@ -146,6 +147,7 @@ bool pattern(uint8_t pattern_list[], uint8_t curr_turn, uint8_t pb_arr[],
 
 uint8_t choose_level(uint8_t pb_arr[], uint8_t pb_length) {
 
+
   for (uint8_t i = 0; i < pb_length; i++) {
     set_led(pb_arr[i], true);
   }
@@ -173,15 +175,16 @@ uint8_t choose_level(uint8_t pb_arr[], uint8_t pb_length) {
   // CHOOSING LEVEL
   //
 
+  uint8_t levels_arr[] = {5, 10, 15, 20};
   uint8_t level;
-
+  
   for (uint8_t idx = 0; idx < curr_turn; idx++) {
     bool got_press = false;
 
     while (!got_press) {
       for (uint8_t j = 0; j < pb_length; j++) {
         if (check_pressed(pb_arr[j])) {
-          level = pb_arr[j];
+          level = levels_arr[j];
           got_press = true;
           break;
         }
@@ -193,11 +196,9 @@ uint8_t choose_level(uint8_t pb_arr[], uint8_t pb_length) {
     }
 
     return level;
-
-    //
-    // END: CHOOSING LEVEL
   }
 
+//// MAIN FUNCTION 
   int main(void) {
 
     uint8_t game_length = 3;
@@ -239,11 +240,27 @@ uint8_t choose_level(uint8_t pb_arr[], uint8_t pb_length) {
     srand(seed);
 
     /// END: seeding
-    ///
-    ///
+
+    choose_level(pb_arr, pb_length);
+
+    for (int i = 0; i < pb_length; i++) {
+    set_led(pb_arr[i], false);
+    }
+
+    delay_ms(2000);
 
     game_init(game_length, pattern_list, pb_arr, pb_length);
     delay_ms(2000);
+
+    
+
+
+
+
+    for (int i = 0; i < pb_length; i++) {
+      set_led(pb_arr[i], false);
+    }
+
 
     while (curr_turn <= game_length) {
       bool is_pattern_correct =
