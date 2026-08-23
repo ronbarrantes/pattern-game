@@ -43,79 +43,79 @@ LightPattern win_pattern[] = {
 
 void set_led(uint8_t pin, bool state) {
 if (state) {
-  PORTB &= ~(1 << pin);
-  DDRB |= (1 << pin);
-    } else {
-      DDRB &= ~(1 << pin);
-      PORTB |= (1 << pin);
-    }
+PORTB &= ~(1 << pin);
+DDRB |= (1 << pin);
+} else {
+DDRB &= ~(1 << pin);
+PORTB |= (1 << pin);
+}
 }
 
 void delay_ms(uint16_t duration_ms) {
 while (duration_ms > 0) {
-    _delay_ms(1);
-    duration_ms--;
-  }
+_delay_ms(1);
+duration_ms--;
+}
 }
 
 bool check_pressed(uint8_t pin) {
-  set_led(pin, false);
-  delay_ms(5);
-  
-  return !(PINB & (1 << pin));
+set_led(pin, false);
+delay_ms(5);
+
+return !(PINB & (1 << pin));
 }
 
 void startup_sequence(uint8_t pin_arr[], uint8_t pb_length) {
-  for (int i = 0; i < pb_length; i++) {
-    set_led(pin_arr[i], true);
-    delay_ms(SHORT_DELAY);
-    
-    set_led(pin_arr[i], false);
-    delay_ms(SHORT_DELAY);
-  }
+for (int i = 0; i < pb_length; i++) {
+set_led(pin_arr[i], true);
+delay_ms(SHORT_DELAY);
 
-  delay_ms(SHORT_DELAY * 3);
+set_led(pin_arr[i], false);
+delay_ms(SHORT_DELAY);
+}
 
-  for (int i = pb_length - 1; i >= 0; i--) {
-    set_led(pin_arr[i], true);
-    delay_ms(SHORT_DELAY);
-    
-    set_led(pin_arr[i], false);
-    delay_ms(SHORT_DELAY);
-  }
+delay_ms(SHORT_DELAY * 3);
+
+for (int i = pb_length - 1; i >= 0; i--) {
+set_led(pin_arr[i], true);
+delay_ms(SHORT_DELAY);
+
+set_led(pin_arr[i], false);
+delay_ms(SHORT_DELAY);
+}
 }
 
 void light_pattern(LightPattern pattern[], uint8_t pattern_length) {
-  for (int i = 0; i < pattern_length; i++) {
-    set_led(pattern[i].led, true);
-    delay_ms(pattern[i].duration);
-    
-    set_led(pattern[i].led, false);
-    delay_ms(pattern[i].duration);
-  }
+for (int i = 0; i < pattern_length; i++) {
+set_led(pattern[i].led, true);
+delay_ms(pattern[i].duration);
+
+set_led(pattern[i].led, false);
+delay_ms(pattern[i].duration);
+}
 }
 
 // do something with this.
 void sequence_light(uint8_t pattern_list[], uint8_t curr_turn) {
-  for (int i = 0; i < curr_turn; i++) {
-    set_led(pattern_list[i], true);
-    delay_ms(LONG_DELAY);
-    
-    set_led(pattern_list[i], false);
-    delay_ms(LONG_DELAY);
-  }
+for (int i = 0; i < curr_turn; i++) {
+set_led(pattern_list[i], true);
+delay_ms(LONG_DELAY);
+
+set_led(pattern_list[i], false);
+delay_ms(LONG_DELAY);
+}
 }
 
 void game_init(uint8_t game_length, uint8_t pattern_list[], uint8_t pb_arr[], uint8_t pb_length) {
-  for (int l_item = 0; l_item < game_length; l_item++) {
-    uint8_t idx = rand() % pb_length;
-    pattern_list[l_item] = pb_arr[idx];
-  }
+for (int l_item = 0; l_item < game_length; l_item++) {
+uint8_t idx = rand() % pb_length;
+pattern_list[l_item] = pb_arr[idx];
+}
 }
 
 
 uint8_t choose_level(uint8_t pb_arr[], uint8_t pb_length, uint16_t *seed) {
-  uint8_t levels_arr[] = {5, 10, 15, 20};
+uint8_t levels_arr[] = {5, 10, 15, 20};
 
 for (uint8_t blink = 0; blink < 20; blink++) {
 
@@ -123,58 +123,58 @@ for (uint8_t blink = 0; blink < 20; blink++) {
 for (uint8_t scan = 0; scan < 10; scan++) {
 (*seed)++;
 
-  for (uint8_t i = 0; i < pb_length; i++) {
-  bool pressed = check_pressed(pb_arr[i]);
-
-  if (pressed) {
-  uint8_t level = levels_arr[i];
-
-  while (check_pressed(pb_arr[i])) {
-    (*seed)++;
-  }
-
-// Turn everything off before leaving
-  for (uint8_t j = 0; j < pb_length; j++) {
-    set_led(pb_arr[j], false);
-  }
-
-  return level;
-}
-
-// check_pressed() turns the LED off,
-// so restore it during the ON phase
-  set_led(pb_arr[i], true);
-  }
-}
-
-// Turn all LEDs off
 for (uint8_t i = 0; i < pb_length; i++) {
-  set_led(pb_arr[i], false);
-}
+bool pressed = check_pressed(pb_arr[i]);
 
-// OFF phase
-for (uint8_t scan = 0; scan < 10; scan++) {
-  (*seed)++;
-  
-  for (uint8_t i = 0; i < pb_length; i++) {
-    if (check_pressed(pb_arr[i])) {
-    uint8_t level = levels_arr[i];
-    
-    while (check_pressed(pb_arr[i])) {
-    (*seed)++;
+if (pressed) {
+uint8_t level = levels_arr[i];
+
+while (check_pressed(pb_arr[i])) {
+(*seed)++;
 }
 
 // Turn everything off before leaving
 for (uint8_t j = 0; j < pb_length; j++) {
-  set_led(pb_arr[j], false);
+set_led(pb_arr[j], false);
 }
 
 return level;
 }
 
-  set_led(pb_arr[i], false);
-  }
-  }
+// check_pressed() turns the LED off,
+// so restore it during the ON phase
+set_led(pb_arr[i], true);
+}
+}
+
+// Turn all LEDs off
+for (uint8_t i = 0; i < pb_length; i++) {
+set_led(pb_arr[i], false);
+}
+
+// OFF phase
+for (uint8_t scan = 0; scan < 10; scan++) {
+(*seed)++;
+
+for (uint8_t i = 0; i < pb_length; i++) {
+if (check_pressed(pb_arr[i])) {
+uint8_t level = levels_arr[i];
+
+while (check_pressed(pb_arr[i])) {
+(*seed)++;
+}
+
+// Turn everything off before leaving
+for (uint8_t j = 0; j < pb_length; j++) {
+set_led(pb_arr[j], false);
+}
+
+return level;
+}
+
+set_led(pb_arr[i], false);
+}
+}
 }
 
 // Nothing selected
@@ -205,9 +205,13 @@ while (check_pressed(curr_guess)) {
 // wait for release
 }
 
+
+
 if (curr_guess != pattern_list[idx]) {
 return false;
 }
+
+delay_ms(1000);
 }
 
 return true;
@@ -223,9 +227,7 @@ uint8_t pb_length = sizeof(pb_arr) / sizeof(pb_arr[0]);
 
 uint8_t startup_pattern_length =
 sizeof(startup_pattern) / sizeof(startup_pattern[0]);
-
 uint8_t win_pattern_length = sizeof(win_pattern) / sizeof(win_pattern[0]);
-
 uint8_t lose_pattern_length = sizeof(lose_pattern) / sizeof(lose_pattern[0]);
 
 uint16_t seed = 0;
@@ -240,7 +242,7 @@ delay_ms(100);
 light_pattern(startup_pattern, startup_pattern_length);
 
 // Wait a bit before choosing level
-delay_ms(500);
+delay_ms(1500);
 
 // Choose difficulty and use the timing of that press as the random seed
 game_length = choose_level(pb_arr, pb_length, &seed);
@@ -275,7 +277,7 @@ return 0;
 curr_turn++;
 }
 
-  light_pattern(win_pattern, win_pattern_length);
-  
-  return 0;
+light_pattern(win_pattern, win_pattern_length);
+
+return 0;
 }
