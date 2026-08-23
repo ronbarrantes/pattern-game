@@ -9,14 +9,49 @@
 #include <util/delay.h>
 
 #define SHORT_DELAY 50
-#define LONG_DELAY 250
+#define MID_DELAY 300
+#define LONG_DELAY 500
 
 #define RED_LED PB1
 #define YELLOW_LED PB2
 #define GREEN_LED PB3
 #define BLUE_LED PB4
 
+typedef struct {
+  uint8_t led,
+  uint16_t duration,
+} LightPattern;
+
 uint8_t pb_arr[] = {RED_LED, YELLOW_LED, GREEN_LED, BLUE_LED};
+
+LightPattern startup_pattern = {
+  {RED_LED, SHORT_DELAY},
+  {YELLOW_LED, SHORT_DELAY},
+  {GREEN_LED, SHORT_DELAY},
+  {BLUE_LED, SHORT_DELAY},
+  {GREEN_LED, SHORT_DELAY},
+  {YELLOW_LED, SHORT_DELAY},
+  {RED_LED, SHORT_DELAY},
+};
+
+LightPattern lose_pattern = {
+  {BLUE_LED, SHORT_DELAY},
+  {GREEN_LED, SHORT_DELAY},
+  {YELLOW_LED, SHORT_DELAY},
+  {RED_LED, MID_DELAY},
+  {RED_LED, MID_DELAY},
+  {RED_LED, MID_DELAY},
+  {RED_LED, MID_DELAY},
+};
+
+LightPattern win_pattern {
+  {RED_LED, SHORT_DELAY},
+  {YELLOW_LED, SHORT_DELAY},
+  {GREEN_LED, SHORT_DELAY},
+  {BLUE_LED, SHORT_DELAY},
+  {GREEN_LED, SHORT_DELAY},
+  {YELLOW_LED, SHORT_DELAY},
+};
 
 void set_led(uint8_t pin, bool state) {
   if (state) {
@@ -60,15 +95,17 @@ void startup_sequence(uint8_t pin_arr[], uint8_t pb_lenght) {
   }
 }
 
-void sad_sequence(uint8_t pin_arr[], uint8_t pb_lenght) {
-  for (int i = pb_lenght - 1; i >= 0; i--) {
+void light_pattern(LightPattern pattern) {
+  uint8_t pattern_length = sizeof(pattern) / sizeof(pattern[0]);
+  
+  for (int i = 0 ; i < pattern_length; i++) {
     // LED on
-    set_led(pin_arr[i], true);
-    _delay_ms(SHORT_DELAY);
+    set_led(pattern.led, true);
+    _delay_ms(pattern.duration);
 
     // LED off
-    set_led(pin_arr[i], false);
-    _delay_ms(SHORT_DELAY);
+    set_led(pattern.led, false);
+    _delay_ms(pattern.duration);
   }
 }
 
@@ -136,7 +173,8 @@ int main(void) {
   }
 
   _delay_ms(100);
-  startup_sequence(pb_arr, pb_length);
+  light_pattern(startup_pattern);
+  
 
   uint8_t game_length = 3;
   uint8_t curr_turn = 1;
@@ -152,7 +190,7 @@ int main(void) {
         pattern(pattern_list, curr_turn, pb_arr, pb_length);
     if (!is_pattern_correct) {
       printf("you lose\n");
-      /// PLAY SAD ANIMATION
+      light_pattern(lose_pattern);
       return 0;
     } else {
 
@@ -160,7 +198,6 @@ int main(void) {
     }
     curr_turn++;
   }
-  printf("you win\n");
-
+  light_pattern(win_pattern);
   return 0;
 }
