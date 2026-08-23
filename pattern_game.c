@@ -18,13 +18,13 @@
 #define BLUE_LED PB4
 
 typedef struct {
-  uint8_t led,
-  uint16_t duration,
+  uint8_t led;
+  uint16_t duration;
 } LightPattern;
 
 uint8_t pb_arr[] = {RED_LED, YELLOW_LED, GREEN_LED, BLUE_LED};
 
-LightPattern startup_pattern = {
+LightPattern startup_pattern[] = {
   {RED_LED, SHORT_DELAY},
   {YELLOW_LED, SHORT_DELAY},
   {GREEN_LED, SHORT_DELAY},
@@ -34,7 +34,7 @@ LightPattern startup_pattern = {
   {RED_LED, SHORT_DELAY},
 };
 
-LightPattern lose_pattern = {
+LightPattern lose_pattern[] = {
   {BLUE_LED, SHORT_DELAY},
   {GREEN_LED, SHORT_DELAY},
   {YELLOW_LED, SHORT_DELAY},
@@ -44,7 +44,7 @@ LightPattern lose_pattern = {
   {RED_LED, MID_DELAY},
 };
 
-LightPattern win_pattern {
+LightPattern win_pattern[] {
   {RED_LED, SHORT_DELAY},
   {YELLOW_LED, SHORT_DELAY},
   {GREEN_LED, SHORT_DELAY},
@@ -95,17 +95,15 @@ void startup_sequence(uint8_t pin_arr[], uint8_t pb_lenght) {
   }
 }
 
-void light_pattern(LightPattern pattern) {
-  uint8_t pattern_length = sizeof(pattern) / sizeof(pattern[0]);
-  
+void light_pattern(LightPattern pattern, uint8_t pattern_length) {
   for (int i = 0 ; i < pattern_length; i++) {
     // LED on
-    set_led(pattern.led, true);
-    _delay_ms(pattern.duration);
+    set_led(pattern[i].led, true);
+    _delay_ms(pattern[i].duration);
 
     // LED off
-    set_led(pattern.led, false);
-    _delay_ms(pattern.duration);
+    set_led(pattern[i].led, false);
+    _delay_ms(pattern[i].duration);
   }
 }
 
