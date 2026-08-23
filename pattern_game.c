@@ -95,7 +95,7 @@ void startup_sequence(uint8_t pin_arr[], uint8_t pb_lenght) {
   }
 }
 
-void light_pattern(LightPattern pattern, uint8_t pattern_length) {
+void light_pattern(LightPattern pattern[], uint8_t pattern_length) {
   for (int i = 0 ; i < pattern_length; i++) {
     // LED on
     set_led(pattern[i].led, true);
@@ -164,16 +164,17 @@ bool pattern(uint8_t pattern_list[], uint8_t curr_turn, uint8_t pb_arr[],
 int main(void) {
   bool is_pressed = false;
   uint8_t pb_length = sizeof(pb_arr) / sizeof(pb_arr[0]);
+  uint8_t startup_pattern_length = sizeof(startup_pattern) / sizeof(startup_pattern[0]);
+  uint8_t win_pattern_length = sizeof(win_pattern) / sizeof(win_pattern[0]);
+  uint8_t lose_pattern_length = sizeof(lose_pattern) / sizeof(lose_pattern[0]);
 
-  // SET PINS TO OUTPUT
   for (int i = 0; i < pb_length; i++) {
     set_led(pb_arr[i], false);
   }
 
   _delay_ms(100);
-  light_pattern(startup_pattern);
+  light_pattern(startup_pattern, startup_pattern_length);
   
-
   uint8_t game_length = 3;
   uint8_t curr_turn = 1;
   uint8_t pattern_list[game_length];
@@ -188,7 +189,7 @@ int main(void) {
         pattern(pattern_list, curr_turn, pb_arr, pb_length);
     if (!is_pattern_correct) {
       printf("you lose\n");
-      light_pattern(lose_pattern);
+      light_pattern(lose_pattern, lose_pattern_length);
       return 0;
     } else {
 
@@ -196,6 +197,6 @@ int main(void) {
     }
     curr_turn++;
   }
-  light_pattern(win_pattern);
+  light_pattern(win_pattern, win_pattern_length);
   return 0;
 }
