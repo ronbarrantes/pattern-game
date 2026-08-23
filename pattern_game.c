@@ -1,8 +1,6 @@
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
 
 #include <avr/io.h>
 #include <stdbool.h>
@@ -125,7 +123,7 @@ void game_init(uint8_t game_length, uint8_t pattern_list[], uint8_t pb_arr[],
                uint8_t pb_lenght) {
 
   for (int l_item = 0; l_item < game_length; l_item++) {
-    int idx = rand() % pb_lenght;
+    uint8_t idx = rand() % pb_length;
     pattern_list[l_item] = pb_arr[idx];
   }
 }
@@ -168,6 +166,23 @@ int main(void) {
   uint8_t win_pattern_length = sizeof(win_pattern) / sizeof(win_pattern[0]);
   uint8_t lose_pattern_length = sizeof(lose_pattern) / sizeof(lose_pattern[0]);
 
+
+  uint16_t seed = 0;
+  bool started = false;
+
+  while (!started) {
+      seed++;
+  
+      for (uint8_t i = 0; i < pb_length; i++) {
+          if (check_pressed(pb_arr[i])) {
+              started = true;
+              break;
+          }
+      }
+  }
+  
+  srand(seed);
+
   for (int i = 0; i < pb_length; i++) {
     set_led(pb_arr[i], false);
   }
@@ -178,9 +193,8 @@ int main(void) {
   uint8_t game_length = 3;
   uint8_t curr_turn = 1;
   uint8_t pattern_list[game_length];
-
   // setup
-  srand((unsigned)time(NULL));
+  // srand((unsigned)time(NULL));
   game_init(game_length, pattern_list, pb_arr, pb_length);
 
   // the loop
@@ -188,12 +202,8 @@ int main(void) {
     bool is_pattern_correct =
         pattern(pattern_list, curr_turn, pb_arr, pb_length);
     if (!is_pattern_correct) {
-      printf("you lose\n");
       light_pattern(lose_pattern, lose_pattern_length);
       return 0;
-    } else {
-
-      printf("next\n");
     }
     curr_turn++;
   }
