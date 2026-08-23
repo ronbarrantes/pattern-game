@@ -8,8 +8,15 @@
 #include <stdbool.h>
 #include <util/delay.h>
 
-#define STARTUP_DELAY 50
-#define GAMEPLAY_DELAY 250
+#define SHORT_DELAY 50
+#define LONG_DELAY 250
+
+#define RED_LED PB1
+#define YELLOW_LED PB2
+#define GREEN_LED PB3
+#define BLUE_LED PB4
+
+uint8_t pb_arr[] = {RED_LED, YELLOW_LED, GREEN_LED, BLUE_LED};
 
 void set_led(uint8_t pin, bool state) {
   if (state) {
@@ -32,28 +39,51 @@ void startup_sequence(uint8_t pin_arr[], uint8_t pb_lenght) {
   for (int i = 0; i < pb_lenght; i++) {
     // LED on
     set_led(pin_arr[i], true);
-    _delay_ms(STARTUP_DELAY);
+    _delay_ms(SHORT_DELAY);
 
     // LED off
     set_led(pin_arr[i], false);
-    _delay_ms(STARTUP_DELAY);
+    _delay_ms(SHORT_DELAY);
   }
 
   // a tiny little break
-  _delay_ms(STARTUP_DELAY * 3);
+  _delay_ms(SHORT_DELAY * 3);
 
   for (int i = pb_lenght - 1; i >= 0; i--) {
     // LED on
     set_led(pin_arr[i], true);
-    _delay_ms(STARTUP_DELAY);
+    _delay_ms(SHORT_DELAY);
 
     // LED off
     set_led(pin_arr[i], false);
-    _delay_ms(STARTUP_DELAY);
+    _delay_ms(SHORT_DELAY);
   }
 }
 
-// CONTINUE HERE
+void sad_sequence(uint8_t pin_arr[], uint8_t pb_lenght) {
+  for (int i = pb_lenght - 1; i >= 0; i--) {
+    // LED on
+    set_led(pin_arr[i], true);
+    _delay_ms(SHORT_DELAY);
+
+    // LED off
+    set_led(pin_arr[i], false);
+    _delay_ms(SHORT_DELAY);
+  }
+}
+
+// for current sequence
+void sequence_light(uint8_t pattern_list[], uint8_t curr_turn) {
+  for (int i = 0; i < curr_turn; i++) {
+    // LED on
+    set_led(pattern_list[i], true);
+    _delay_ms(LONG_DELAY);
+
+    // LED off
+    set_led(pattern_list[i], false);
+    _delay_ms(LONG_DELAY);
+  }
+}
 
 /// game_setup
 void game_init(uint8_t game_length, uint8_t pattern_list[], uint8_t pb_arr[],
@@ -65,30 +95,13 @@ void game_init(uint8_t game_length, uint8_t pattern_list[], uint8_t pb_arr[],
   }
 }
 
-// for current sequence
-void sequence_light(uint8_t pattern_list[], uint8_t curr_turn) {
-  for (int i = 0; i < curr_turn; i++) {
-    // LED on
-    set_led(pattern_list[i], true);
-    _delay_ms(GAMEPLAY_DELAY);
-
-    // LED off
-    set_led(pattern_list[i], false);
-    _delay_ms(GAMEPLAY_DELAY);
-  }
-}
-
-/// pattern
 bool pattern(uint8_t pattern_list[], uint8_t curr_turn, uint8_t pb_arr[],
              uint8_t pb_length) {
   uint8_t curr_guess;
-  bool is_pressed = false;
 
-  // PLAY CURRENT SEQUENCE
   sequence_light(pattern_list, curr_turn);
 
-  // READ THE BUTTONS
-  for (int idx = 0; idx < curr_turn; idx++) {
+  for (uint8_t idx = 0; idx < curr_turn; idx++) {
     bool got_press = false;
 
     while (!got_press) {
@@ -102,11 +115,10 @@ bool pattern(uint8_t pattern_list[], uint8_t curr_turn, uint8_t pb_arr[],
     }
 
     while (check_pressed(curr_guess)) {
-      // Wait for release so this press is counted once.
+      // wait for release
     }
 
     if (curr_guess != pattern_list[idx]) {
-      /// SAD PATTERN
       return false;
     }
   }
@@ -116,7 +128,6 @@ bool pattern(uint8_t pattern_list[], uint8_t curr_turn, uint8_t pb_arr[],
 
 int main(void) {
   bool is_pressed = false;
-  uint8_t pb_arr[4] = {PB0, PB1, PB2, PB3};
   uint8_t pb_length = sizeof(pb_arr) / sizeof(pb_arr[0]);
 
   // SET PINS TO OUTPUT
