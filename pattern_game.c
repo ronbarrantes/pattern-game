@@ -29,32 +29,23 @@ void delay_ms(uint16_t duration_ms) {
 }
 
 LightPattern startup_pattern[] = {
-    {RED_LED, SHORT_DELAY},
-    {YELLOW_LED, SHORT_DELAY},
-    {GREEN_LED, SHORT_DELAY},
-    {BLUE_LED, SHORT_DELAY},
-    {GREEN_LED, SHORT_DELAY},
-    {YELLOW_LED, SHORT_DELAY},
+    {RED_LED, SHORT_DELAY},   {YELLOW_LED, SHORT_DELAY},
+    {GREEN_LED, SHORT_DELAY}, {BLUE_LED, SHORT_DELAY},
+    {GREEN_LED, SHORT_DELAY}, {YELLOW_LED, SHORT_DELAY},
     {RED_LED, SHORT_DELAY},
 };
 
 LightPattern lose_pattern[] = {
-    {BLUE_LED, SHORT_DELAY},
-    {GREEN_LED, SHORT_DELAY},
-    {YELLOW_LED, SHORT_DELAY},
-    {RED_LED, MID_DELAY},
-    {RED_LED, MID_DELAY},
-    {RED_LED, MID_DELAY},
+    {BLUE_LED, SHORT_DELAY},   {GREEN_LED, SHORT_DELAY},
+    {YELLOW_LED, SHORT_DELAY}, {RED_LED, MID_DELAY},
+    {RED_LED, MID_DELAY},      {RED_LED, MID_DELAY},
     {RED_LED, MID_DELAY},
 };
 
 LightPattern win_pattern[] = {
-    {RED_LED, SHORT_DELAY},
-    {YELLOW_LED, SHORT_DELAY},
-    {GREEN_LED, SHORT_DELAY},
-    {BLUE_LED, SHORT_DELAY},
-    {GREEN_LED, SHORT_DELAY},
-    {YELLOW_LED, SHORT_DELAY},
+    {RED_LED, SHORT_DELAY},   {YELLOW_LED, SHORT_DELAY},
+    {GREEN_LED, SHORT_DELAY}, {BLUE_LED, SHORT_DELAY},
+    {GREEN_LED, SHORT_DELAY}, {YELLOW_LED, SHORT_DELAY},
 };
 
 void set_led(uint8_t pin, bool state) {
@@ -114,16 +105,16 @@ void sequence_light(uint8_t pattern_list[], uint8_t curr_turn) {
   }
 }
 
-void game_init(uint8_t game_length, uint8_t pattern_list[],
-               uint8_t pb_arr[], uint8_t pb_length) {
+void game_init(uint8_t game_length, uint8_t pattern_list[], uint8_t pb_arr[],
+               uint8_t pb_length) {
   for (int l_item = 0; l_item < game_length; l_item++) {
     uint8_t idx = rand() % pb_length;
     pattern_list[l_item] = pb_arr[idx];
   }
 }
 
-bool pattern(uint8_t pattern_list[], uint8_t curr_turn,
-             uint8_t pb_arr[], uint8_t pb_length) {
+bool pattern(uint8_t pattern_list[], uint8_t curr_turn, uint8_t pb_arr[],
+             uint8_t pb_length) {
   uint8_t curr_guess;
 
   sequence_light(pattern_list, curr_turn);
@@ -153,60 +144,120 @@ bool pattern(uint8_t pattern_list[], uint8_t curr_turn,
   return true;
 }
 
-int main(void) {
-  uint8_t pb_length = sizeof(pb_arr) / sizeof(pb_arr[0]);
+uint8_t choose_level(uint8_t pb_arr[], uint8_t pb_length) {
 
-  uint8_t startup_pattern_length =
-      sizeof(startup_pattern) / sizeof(startup_pattern[0]);
-
-  uint8_t win_pattern_length =
-      sizeof(win_pattern) / sizeof(win_pattern[0]);
-
-  uint8_t lose_pattern_length =
-      sizeof(lose_pattern) / sizeof(lose_pattern[0]);
-
-  uint16_t seed = 0;
-  bool started = false;
-
-  while (!started) {
-    seed++;
-
-    for (uint8_t i = 0; i < pb_length; i++) {
-      if (check_pressed(pb_arr[i])) {
-        started = true;
-        break;
-      }
-    }
+  for (uint8_t i = 0; i < pb_length; i++) {
+    set_led(pb_arr[i], true);
   }
 
-  srand(seed);
+  delay_ms(200);
 
-  for (int i = 0; i < pb_length; i++) {
+  for (uint8_t i = 0; i < pb_length; i++) {
     set_led(pb_arr[i], false);
   }
 
-  _delay_ms(100);
-  light_pattern(startup_pattern, startup_pattern_length);
+  delay_ms(200);
 
-  uint8_t game_length = 3;
-  uint8_t curr_turn = 1;
-  uint8_t pattern_list[game_length];
-
-  game_init(game_length, pattern_list, pb_arr, pb_length);
-
-  while (curr_turn <= game_length) {
-    bool is_pattern_correct =
-        pattern(pattern_list, curr_turn, pb_arr, pb_length);
-
-    if (!is_pattern_correct) {
-      light_pattern(lose_pattern, lose_pattern_length);
-      return 0;
-    }
-
-    curr_turn++;
+  for (uint8_t i = 0; i < pb_length; i++) {
+    set_led(pb_arr[i], true);
   }
 
-  light_pattern(win_pattern, win_pattern_length);
+  delay_ms(200);
 
-  return 0;
-}
+  for (uint8_t i = 0; i < pb_length; i++) {
+    set_led(pb_arr[i], false);
+  }
+
+  delay_ms(200);
+
+  // CHOOSING LEVEL
+  //
+
+  uint8_t level;
+
+  for (uint8_t idx = 0; idx < curr_turn; idx++) {
+    bool got_press = false;
+
+    while (!got_press) {
+      for (uint8_t j = 0; j < pb_length; j++) {
+        if (check_pressed(pb_arr[j])) {
+          level = pb_arr[j];
+          got_press = true;
+          break;
+        }
+      }
+    }
+
+    while (check_pressed(curr_guess)) {
+      // wait for release
+    }
+
+    return level;
+
+    //
+    // END: CHOOSING LEVEL
+  }
+
+  int main(void) {
+
+    uint8_t game_length = 3;
+    uint8_t curr_turn = 1;
+    uint8_t pattern_list[game_length];
+
+    uint8_t pb_length = sizeof(pb_arr) / sizeof(pb_arr[0]);
+
+    uint8_t startup_pattern_length =
+        sizeof(startup_pattern) / sizeof(startup_pattern[0]);
+
+    uint8_t win_pattern_length = sizeof(win_pattern) / sizeof(win_pattern[0]);
+
+    uint8_t lose_pattern_length =
+        sizeof(lose_pattern) / sizeof(lose_pattern[0]);
+
+    uint16_t seed = 0;
+    bool started = false;
+
+    for (int i = 0; i < pb_length; i++) {
+      set_led(pb_arr[i], false);
+    }
+
+    _delay_ms(100);
+
+    light_pattern(startup_pattern, startup_pattern_length);
+
+    /// Seeding the randomness
+    while (!started) {
+      seed++;
+
+      for (uint8_t i = 0; i < pb_length; i++) {
+        if (check_pressed(pb_arr[i])) {
+          started = true;
+          break;
+        }
+      }
+    }
+    srand(seed);
+
+    /// END: seeding
+    ///
+    ///
+
+    game_init(game_length, pattern_list, pb_arr, pb_length);
+    delay_ms(2000);
+
+    while (curr_turn <= game_length) {
+      bool is_pattern_correct =
+          pattern(pattern_list, curr_turn, pb_arr, pb_length);
+
+      if (!is_pattern_correct) {
+        light_pattern(lose_pattern, lose_pattern_length);
+        return 0;
+      }
+
+      curr_turn++;
+    }
+
+    light_pattern(win_pattern, win_pattern_length);
+
+    return 0;
+  }
