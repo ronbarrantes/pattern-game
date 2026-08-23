@@ -242,7 +242,7 @@ delay_ms(100);
 light_pattern(startup_pattern, startup_pattern_length);
 
 // Wait a bit before choosing level
-delay_ms(1500);
+delay_ms(1000);
 
 // Choose difficulty and use the timing of that press as the random seed
 game_length = choose_level(pb_arr, pb_length, &seed);
@@ -256,7 +256,7 @@ return 0;
 srand(seed);
 
 // Small pause before the game begins
-delay_ms(500);
+delay_ms(1000);
 
 game_init(game_length, pattern_list, pb_arr, pb_length);
 
