@@ -11,10 +11,10 @@
 #define MID_DELAY 300
 #define LONG_DELAY 500
 
-#define RED_LED PB1
-#define YELLOW_LED PB2
-#define GREEN_LED PB3
-#define BLUE_LED PB4
+#define RED_LED PB2
+#define BLUE_LED PB1
+#define YELLOW_LED PB3
+#define GREEN_LED PB4
 
 typedef struct {
   uint8_t led;
