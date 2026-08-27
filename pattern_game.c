@@ -16,10 +16,10 @@
 #define YELLOW_LED PB3
 #define GREEN_LED PB4
 
-#define BLUE_TONE 262
-#define RED_TONE 330
-#define YELLOW_TONE 392
-#define GREEN_TONE 523
+#define RED_TONE 262
+#define YELLOW_TONE 330
+#define GREEN_TONE 392
+#define BLUE_TONE 523
 
 typedef struct {
   uint8_t led;
@@ -73,17 +73,17 @@ LightPattern win_pattern[] = {
 };
 
 Note lose_melody[] = {
+  {BLUE_TONE, 150},
   {GREEN_TONE, 150},
   {YELLOW_TONE, 150},
-  {RED_TONE, 150},
-  {BLUE_TONE, 400},
+  {RED_TONE, 400},
 };
 
 Note win_melody[] = {
-  {BLUE_TONE, 100},
   {RED_TONE, 100},
   {YELLOW_TONE, 100},
-  {GREEN_TONE, 300},
+  {GREEN_TONE, 100},
+  {BLUE_TONE, 300},
 };
 
 void play_sound(uint16_t frequency, uint16_t duration_ms) {
