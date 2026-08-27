@@ -229,8 +229,10 @@ bool game_play(uint8_t pattern_list[], uint8_t curr_turn, uint8_t led_arr[],
     bool got_press = false;
 
     while (!got_press) {
+      uint8_t buttons = PINB;
+
       for (uint8_t j = 0; j < led_length; j++) {
-        if (check_pressed(led_arr[j])) {
+        if (!(buttons & (1 << led_arr[j]))) {
           curr_guess = led_arr[j];
           got_press = true;
           break;
