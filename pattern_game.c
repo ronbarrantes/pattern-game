@@ -16,12 +16,32 @@
 #define YELLOW_LED PB3
 #define GREEN_LED PB4
 
+#define BLUE_TONE 262
+#define RED_TONE 330
+#define YELLOW_TONE 392
+#define GREEN_TONE 523
+
 typedef struct {
   uint8_t led;
   uint16_t duration;
 } LightPattern;
 
+typedef struct {
+  uint16_t frequency;
+  uint16_t duration_ms;
+} Note;
+
 uint8_t led_arr[] = {RED_LED, YELLOW_LED, GREEN_LED, BLUE_LED};
+
+uint16_t button_tones[] = {
+  0,
+  BLUE_TONE,
+  RED_TONE,
+  YELLOW_TONE,
+  GREEN_TONE,
+};
+
+bool buzzer_enabled = true;
 
 LightPattern startup_pattern[] = {
   {RED_LED, SHORT_DELAY},
@@ -52,7 +72,25 @@ LightPattern win_pattern[] = {
   {YELLOW_LED, SHORT_DELAY},
 };
 
+Note lose_melody[] = {
+  {GREEN_TONE, 150},
+  {YELLOW_TONE, 150},
+  {RED_TONE, 150},
+  {BLUE_TONE, 400},
+};
+
+Note win_melody[] = {
+  {BLUE_TONE, 100},
+  {RED_TONE, 100},
+  {YELLOW_TONE, 100},
+  {GREEN_TONE, 300},
+};
+
 void play_sound(uint16_t frequency, uint16_t duration_ms) {
+  if (!buzzer_enabled) {
+    return;
+  }
+
   DDRB |= (1 << PB0);
 
   // CTC mode
@@ -79,6 +117,12 @@ void play_sound(uint16_t frequency, uint16_t duration_ms) {
   PORTB &= ~(1 << PB0);
 }
 
+void play_melody(Note melody[], uint8_t melody_length) {
+  for (uint8_t i = 0; i < melody_length; i++) {
+    play_sound(melody[i].frequency, melody[i].duration_ms);
+  }
+}
+
 void set_led(uint8_t pin, bool state) {
   if (state) {
     PORTB &= ~(1 << pin);
@@ -93,6 +137,16 @@ void delay_ms(uint16_t duration_ms) {
   while (duration_ms > 0) {
     _delay_ms(1);
     duration_ms--;
+  }
+}
+
+void blink_led(uint8_t pin, uint8_t count, uint16_t duration_ms) {
+  for (uint8_t i = 0; i < count; i++) {
+    set_led(pin, true);
+    delay_ms(duration_ms);
+
+    set_led(pin, false);
+    delay_ms(duration_ms);
   }
 }
 
@@ -153,7 +207,8 @@ void game_init(uint8_t game_length, uint8_t pattern_list[], uint8_t led_arr[],
 }
 
 uint8_t choose_level(uint8_t led_arr[], uint8_t led_length, uint16_t *seed) {
-  uint8_t levels_arr[] = {5, 10, 15, 20};
+  // Red toggles the buzzer. Yellow, green, and blue choose the level.
+  uint8_t levels_arr[] = {0, 5, 10, 20};
 
   for (uint8_t blink = 0; blink < 20; blink++) {
 
@@ -165,29 +220,38 @@ uint8_t choose_level(uint8_t led_arr[], uint8_t led_length, uint16_t *seed) {
         bool pressed = check_pressed(led_arr[i]);
 
         if (pressed) {
-          uint8_t level = levels_arr[i];
-
           while (check_pressed(led_arr[i])) {
             (*seed)++;
           }
+
+          if (led_arr[i] == RED_LED) {
+            buzzer_enabled = !buzzer_enabled;
+            play_sound(RED_TONE, 100);
+            set_led(RED_LED, buzzer_enabled);
+            continue;
+          }
+
+          uint8_t level = levels_arr[i];
+          play_sound(button_tones[led_arr[i]], 100);
 
           // Turn everything off before leaving
           for (uint8_t j = 0; j < led_length; j++) {
             set_led(led_arr[j], false);
           }
 
+          blink_led(led_arr[i], 3, SHORT_DELAY);
           return level;
         }
 
         // check_pressed() turns the LED off,
         // so restore it during the ON phase
-        set_led(led_arr[i], true);
+        set_led(led_arr[i], led_arr[i] == RED_LED ? buzzer_enabled : true);
       }
     }
 
-    // Turn all LEDs off
+    // The red LED shows the buzzer state while the other LEDs blink off.
     for (uint8_t i = 0; i < led_length; i++) {
-      set_led(led_arr[i], false);
+      set_led(led_arr[i], led_arr[i] == RED_LED && buzzer_enabled);
     }
 
     // OFF phase
@@ -196,21 +260,30 @@ uint8_t choose_level(uint8_t led_arr[], uint8_t led_length, uint16_t *seed) {
 
       for (uint8_t i = 0; i < led_length; i++) {
         if (check_pressed(led_arr[i])) {
-          uint8_t level = levels_arr[i];
-
           while (check_pressed(led_arr[i])) {
             (*seed)++;
           }
+
+          if (led_arr[i] == RED_LED) {
+            buzzer_enabled = !buzzer_enabled;
+            play_sound(RED_TONE, 100);
+            set_led(RED_LED, buzzer_enabled);
+            continue;
+          }
+
+          uint8_t level = levels_arr[i];
+          play_sound(button_tones[led_arr[i]], 100);
 
           // Turn everything off before leaving
           for (uint8_t j = 0; j < led_length; j++) {
             set_led(led_arr[j], false);
           }
 
+          blink_led(led_arr[i], 3, SHORT_DELAY);
           return level;
         }
 
-        set_led(led_arr[i], false);
+        set_led(led_arr[i], led_arr[i] == RED_LED && buzzer_enabled);
       }
     }
   }
@@ -240,6 +313,8 @@ bool game_play(uint8_t pattern_list[], uint8_t curr_turn, uint8_t led_arr[],
       }
     }
 
+    play_sound(button_tones[curr_guess], 100);
+
     while (check_pressed(curr_guess)) {
       // wait for release
     }
@@ -267,6 +342,8 @@ int main(void) {
     uint8_t win_pattern_length = sizeof(win_pattern) / sizeof(win_pattern[0]);
     uint8_t lose_pattern_length =
       sizeof(lose_pattern) / sizeof(lose_pattern[0]);
+    uint8_t win_melody_length = sizeof(win_melody) / sizeof(win_melody[0]);
+    uint8_t lose_melody_length = sizeof(lose_melody) / sizeof(lose_melody[0]);
 
     uint16_t seed = 0;
 
@@ -309,6 +386,7 @@ int main(void) {
         game_play(pattern_list, curr_turn, led_arr, led_length);
 
       if (!is_pattern_correct) {
+        play_melody(lose_melody, lose_melody_length);
         light_pattern(lose_pattern, lose_pattern_length);
 
         break;
@@ -317,7 +395,8 @@ int main(void) {
       curr_turn++;
     }
 
-    if (!is_pattern_correct) {
+    if (is_pattern_correct) {
+      play_melody(win_melody, win_melody_length);
       light_pattern(win_pattern, win_pattern_length);
     }
 
