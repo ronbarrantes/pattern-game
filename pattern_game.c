@@ -191,10 +191,16 @@ void light_pattern(LightPattern pattern[], uint8_t pattern_length) {
 void sequence_light(uint8_t pattern_list[], uint8_t curr_turn) {
   for (int i = 0; i < curr_turn; i++) {
     set_led(pattern_list[i], true);
-    delay_ms(LONG_DELAY);
+    if (buzzer_enabled) {
+      play_sound(button_tones[pattern_list[i]], LONG_DELAY);
+    } else {
+      delay_ms(LONG_DELAY);
+    }
 
     set_led(pattern_list[i], false);
-    delay_ms(LONG_DELAY);
+    if (i + 1 < curr_turn) {
+      delay_ms(LONG_DELAY);
+    }
   }
 }
 
@@ -313,7 +319,7 @@ bool game_play(uint8_t pattern_list[], uint8_t curr_turn, uint8_t led_arr[],
       }
     }
 
-    play_sound(button_tones[curr_guess], 100);
+    play_sound(button_tones[curr_guess], 50);
 
     while (check_pressed(curr_guess)) {
       // wait for release
@@ -322,8 +328,6 @@ bool game_play(uint8_t pattern_list[], uint8_t curr_turn, uint8_t led_arr[],
     if (curr_guess != pattern_list[idx]) {
       return false;
     }
-
-    delay_ms(1000);
   }
 
   return true;
@@ -393,6 +397,10 @@ int main(void) {
       }
 
       curr_turn++;
+
+      if (curr_turn <= game_length) {
+        delay_ms(1000);
+      }
     }
 
     if (is_pattern_correct) {
