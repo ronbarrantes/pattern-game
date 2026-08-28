@@ -21,6 +21,51 @@
 #define GREEN_TONE 392
 #define BLUE_TONE 523
 
+
+
+
+/*
+rough plan
+
+// main.c
+main()
+
+// game.c
+game_init()
+game_update()
+game_reset()
+game_next_turn()
+game_handle_press()
+game_win()
+game_lose()
+sequence_generate()
+
+// panel.c
+panel_init()
+panel_update()
+panel_set_led()
+panel_all_off()
+panel_get_pressed()
+panel_wait_release()
+panel_start_pattern()
+panel_pattern_update()
+
+// sound.c
+sound_init()
+sound_play()
+sound_stop()
+sound_update()
+melody_start()
+melody_update()
+sound_set_enabled()
+sound_is_enabled()
+
+// utils.c
+delay_ms()
+
+
+*/
+
 typedef struct {
   uint8_t led;
   uint16_t duration;
