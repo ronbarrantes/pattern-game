@@ -117,6 +117,33 @@ void play_sound(uint16_t frequency, uint16_t duration_ms) {
   PORTB &= ~(1 << PB0);
 }
 
+void sound_start(uint16_t frequency) {
+  if (!buzzer_enabled) {
+    return;
+  }
+
+  DDRB |= (1 << PB0);
+
+  // CTC mode
+  // Toggle OC0A (PB0) every time timer matches OCR0A
+  TCCR0A = (1 << COM0A0) | (1 << WGM01);
+
+  // Prescaler = 8
+  TCCR0B = (1 << CS01);
+
+  // Calculate how high Timer0 should count
+  OCR0A = (F_CPU / (2UL * 8 * frequency)) - 1;
+}
+
+void sound_stop() {
+  // Stop Timer0
+  TCCR0A = 0;
+  TCCR0B = 0;
+
+  // PB0 LOW
+  PORTB &= ~(1 << PB0);
+}
+
 void play_melody(Note melody[], uint8_t melody_length) {
   for (uint8_t i = 0; i < melody_length; i++) {
     play_sound(melody[i].frequency, melody[i].duration_ms);
