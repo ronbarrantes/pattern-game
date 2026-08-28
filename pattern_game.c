@@ -346,11 +346,14 @@ bool game_play(uint8_t pattern_list[], uint8_t curr_turn, uint8_t led_arr[],
       }
     }
 
-    play_sound(button_tones[curr_guess], 50);
-
+    // START THE TONE
+    sound_start(button_tones[curr_guess]);
     while (check_pressed(curr_guess)) {
       // wait for release
     }
+
+    // stop the sound
+    sound_stop();
 
     if (curr_guess != pattern_list[idx]) {
       return false;
