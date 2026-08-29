@@ -21,8 +21,7 @@
 #define GREEN_TONE 392
 #define BLUE_TONE 523
 
-
-
+#define MELODY_END {0, 0}
 
 /*
 rough plan
@@ -62,7 +61,27 @@ sound_is_enabled()
 
 // utils.c
 delay_ms()
+*/
 
+// I want something like this in the end
+
+/*
+
+int main(void) {
+    Game game;
+    Panel panel;
+    MelodyPlayer player;
+
+    game_init(&game);
+    panel_init(&panel);
+    melody_init(&player);
+
+    while (1) {
+        panel_update(&panel);
+        melody_update(&player);
+        game_update(&game, &panel, &player);
+    }
+}
 
 */
 
@@ -76,6 +95,13 @@ typedef struct {
   uint16_t duration_ms;
 } Note;
 
+typedef struct {
+  const Note *melody;
+  uint8_t curr_note;
+  // the function will contain a sentinel to ensure the
+  // note ends {0, 0}
+} MelodyPlayer;
+
 uint8_t led_arr[] = {RED_LED, YELLOW_LED, GREEN_LED, BLUE_LED};
 
 uint16_t button_tones[] = {
@@ -87,6 +113,7 @@ uint16_t button_tones[] = {
 };
 
 bool buzzer_enabled = true;
+bool sound_playing = false;
 
 LightPattern startup_pattern[] = {
   {RED_LED, SHORT_DELAY},
@@ -122,6 +149,7 @@ Note lose_melody[] = {
   {GREEN_TONE, 150},
   {YELLOW_TONE, 150},
   {RED_TONE, 400},
+  MELODY_END,
 };
 
 Note win_melody[] = {
@@ -129,6 +157,7 @@ Note win_melody[] = {
   {YELLOW_TONE, 100},
   {GREEN_TONE, 100},
   {BLUE_TONE, 300},
+  MELODY_END,
 };
 
 void play_sound(uint16_t frequency, uint16_t duration_ms) {
@@ -227,6 +256,38 @@ bool check_pressed(uint8_t pin) {
   delay_ms(5);
 
   return !(PINB & (1 << pin));
+}
+
+void melody_start(MelodyPlayer *player, const Note *melody) {
+  player->melody = melody;
+  player->curr_note = 0;
+
+  Note note = player->melody[0];
+
+  if (note.frequency == 0 && note.duration_ms == 0) {
+    player->melody = NULL;
+    return;
+  }
+
+  play_sound(note.frequency, note.duration_ms);
+}
+
+void melody_update(MelodyPlayer *player) {
+  if (player->melody == NULL)
+    return;
+
+  // check if sound is playing
+  //
+
+  Note note = player->melody[player->curr_note];
+
+  if (note.frequency == 0 && note.duration_ms == 0) {
+    player->melody = NULL;
+    sound_stop();
+    return;
+  }
+
+  play_sound(note.frequency, note.duration_ms);
 }
 
 void startup_sequence(uint8_t pin_arr[], uint8_t led_length) {
