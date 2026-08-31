@@ -101,6 +101,7 @@ typedef struct {
   const Light *sequence;
   uint8_t curr_led;
   uint8_t sequence_length;
+  uint32_t started_at;
 } SequencePlayer;
 
 uint8_t led_arr[] = {RED_LED, YELLOW_LED, GREEN_LED, BLUE_LED};
@@ -293,7 +294,34 @@ void sequence_start(SequencePlayer *player, const Light *sequence,
   set_led(player->sequence->led, true);
 }
 
-void sequence_stop(SequencePlayer *player) {}
+void sequence_update(SequencePlayer *player) {
+  if (player->sequence == NULL)
+    return;
+
+  Light light = player->sequence[player->curr_led];
+
+  if (player->curr_led >= player->sequence_length) {
+    player->sequence = NULL;
+    set_led(light.led, false);
+    return;
+  }
+
+  set_led(light.led, true);
+  _delay_ms(light.duration_ms);
+  set_led(light.led, false);
+
+  player->curr_led++;
+}
+
+void sequence_stop(SequencePlayer *player) {
+  if (player->sequence == NULL)
+    return;
+
+  Light light = player->sequence[player->curr_led];
+
+  set_led(light.led, false);
+  player->sequence = NULL;
+}
 
 void melody_update(MelodyPlayer *player) {
   if (player->melody == NULL)
@@ -312,25 +340,6 @@ void melody_update(MelodyPlayer *player) {
   }
 
   play_sound(note.frequency, note.duration_ms);
-}
-
-void sequence_update(SequencePlayer *player) {
-  if (player->sequence == NULL)
-    return;
-
-  Light light = player->sequence[player->curr_led];
-
-  if (player->curr_led >= player->sequence_length) {
-    player->sequence = NULL;
-    set_led(light.led, false);
-    return;
-  }
-
-  set_led(light.led, true);
-  _delay_ms(light.duration_ms);
-  set_led(light.led, false);
-
-  player->curr_led++;
 }
 
 void startup_sequence(uint8_t pin_arr[], uint8_t led_length) {
