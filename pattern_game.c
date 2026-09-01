@@ -40,6 +40,7 @@ typedef struct {
   uint8_t curr_note;
   // the function will contain a sentinel to ensure the
   // note ends {0, 0}
+  uint32_t started_at;
 } MelodyPlayer;
 
 typedef struct {
@@ -149,7 +150,6 @@ uint16_t button_tones[] = {
 };
 
 static bool buzzer_enabled = true;
-static bool sound_playing = false;
 
 LightPattern startup_pattern[] = {
   {RED_LED, SHORT_DELAY},
@@ -209,13 +209,10 @@ void set_led(uint8_t pin, bool state) {
 
 void play_sound(uint16_t frequency, uint16_t duration_ms) {
   if (!buzzer_enabled) {
-    sound_playing = false;
     return;
   }
 
   uint32_t now = timer_now();
-
-  sound_playing = true;
 
   DDRB |= (1 << PB0);
 
@@ -236,13 +233,11 @@ void play_sound(uint16_t frequency, uint16_t duration_ms) {
   TCCR0B = 0;
 
   // PB0 LOW
-  sound_playing = false;
   PORTB &= ~(1 << PB0);
 }
 
 void sound_start(uint16_t frequency) {
   if (!buzzer_enabled) {
-    sound_playing = false;
     return;
   }
 
@@ -257,7 +252,6 @@ void sound_start(uint16_t frequency) {
 
   // Calculate how high Timer0 should count
   OCR0A = (F_CPU / (2UL * 8 * frequency)) - 1;
-  sound_playing = true;
 }
 
 void sound_stop(void) {
@@ -268,8 +262,6 @@ void sound_stop(void) {
   // PB0 LOW
 
   PORTB &= ~(1 << PB0);
-
-  sound_playing = false;
 }
 
 void play_melody(Note melody[], uint8_t melody_length) {
@@ -302,21 +294,6 @@ bool check_pressed(uint8_t pin) {
 
   return !(PINB & (1 << pin));
 }
-
-void melody_start(MelodyPlayer *player, const Note *melody) {
-  player->melody = melody;
-  player->curr_note = 0;
-
-  Note note = player->melody[0];
-
-  if (note.frequency == 0 && note.duration_ms == 0) {
-    player->melody = NULL;
-    return;
-  }
-
-  play_sound(note.frequency, note.duration_ms);
-}
-
 void sequence_start(SequencePlayer *player, const Light *sequence,
                     uint8_t sequence_length) {
   player->sequence = sequence;
@@ -364,23 +341,42 @@ void sequence_stop(SequencePlayer *player) {
   player->sequence = NULL;
 }
 
+void melody_start(MelodyPlayer *player, const Note *melody) {
+  player->melody = melody;
+  player->curr_note = 0;
+  player->started_at = timer_now();
+
+  Note note = player->melody[0];
+
+  if (note.frequency == 0 && note.duration_ms == 0) {
+    player->melody = NULL;
+    return;
+  }
+
+  sound_start(note.frequency);
+}
+
 void melody_update(MelodyPlayer *player) {
   if (player->melody == NULL)
     return;
 
-  if (sound_playing) {
-    return;
-  }
-
   Note note = player->melody[player->curr_note];
+  uint32_t now = timer_now();
 
-  if (note.frequency == 0 && note.duration_ms == 0) {
-    player->melody = NULL;
+  if ((uint32_t)(now - player->started_at) >= note.duration_ms) {
     sound_stop();
-    return;
-  }
+    player->curr_note++;
 
-  play_sound(note.frequency, note.duration_ms);
+    Note next = player->melody[player->curr_note];
+
+    if (next.frequency == 0 && next.duration_ms == 0) {
+      player->melody = NULL;
+      return;
+    }
+
+    player->started_at = now;
+    sound_start(next.frequency);
+  }
 }
 
 void startup_sequence(uint8_t pin_arr[], uint8_t led_length) {
@@ -578,7 +574,6 @@ int main(void) {
 
   sequence_start(
     &sp, test_sequence, sizeof(test_sequence) / sizeof(test_sequence[0]));
-
   melody_start(&mp, win_melody);
 
   while (true) {
