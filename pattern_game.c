@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include <avr/interrupt.h>
 #include <avr/io.h>
 #include <util/delay.h>
 
@@ -22,6 +23,8 @@
 #define BLUE_TONE 523
 
 #define MELODY_END {0, 0}
+
+// I need to make a clock using Timer1
 
 /*
 rough plan
@@ -104,6 +107,8 @@ typedef struct {
   uint32_t started_at;
 } SequencePlayer;
 
+volatile uint32_t system_ticks = 0;
+
 uint8_t led_arr[] = {RED_LED, YELLOW_LED, GREEN_LED, BLUE_LED};
 
 uint16_t button_tones[] = {
@@ -161,6 +166,25 @@ Note win_melody[] = {
   {BLUE_TONE, 300},
   MELODY_END,
 };
+
+void timer_init(void) {
+  TCNT1 = 0;
+
+  // CTC mode
+  TCCR1 = (1 << CTC1);
+
+  // 1 MHz / 8 = 125 kHz
+  // 125 timer counts = 1 ms
+  OCR1A = 124;
+
+  TIMSK |= (1 << OCIE1A);
+
+  // Start Timer1, prescaler /8
+  TCCR1 |= (1 << CS12);
+
+  // Global interrupts on
+  sei();
+}
 
 void play_sound(uint16_t frequency, uint16_t duration_ms) {
   if (!buzzer_enabled) {
