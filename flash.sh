@@ -4,7 +4,42 @@ set -euo pipefail
 
 usage() {
   echo "Usage: $0 FILE.c|FILE.elf|FILE.hex" >&2
-  echo "Override the default port with ATTINY_PORT=/dev/ttyACM1" >&2
+  echo "Override automatic port detection with ATTINY_PORT=/dev/your-port" >&2
+}
+
+find_programmer_port() {
+  if [[ -n "${ATTINY_PORT:-}" ]]; then
+    printf '%s\n' "$ATTINY_PORT"
+    return
+  fi
+
+  local device_dir="${ATTINY_DEVICE_DIR:-/dev}"
+  local candidate
+  local -a candidates=()
+
+  for candidate in \
+    "$device_dir"/ttyACM* \
+    "$device_dir"/ttyUSB* \
+    "$device_dir"/cu.usbmodem* \
+    "$device_dir"/cu.usbserial* \
+    "$device_dir"/cu.wchusbserial* \
+    "$device_dir"/cu.SLAB_USBtoUART*; do
+    [[ -e "$candidate" ]] && candidates+=("$candidate")
+  done
+
+  if [[ ${#candidates[@]} -eq 1 ]]; then
+    printf '%s\n' "${candidates[0]}"
+    return
+  fi
+
+  if [[ ${#candidates[@]} -eq 0 ]]; then
+    echo "No ArduinoISP serial port found." >&2
+  else
+    echo "More than one possible ArduinoISP serial port was found:" >&2
+    printf '  %s\n' "${candidates[@]}" >&2
+  fi
+  echo "Set ATTINY_PORT to the correct device and try again." >&2
+  return 69
 }
 
 if [[ $# -ne 1 ]]; then
@@ -25,9 +60,9 @@ fi
 
 project_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 bin_dir="${project_dir}/bin"
-port="${ATTINY_PORT:-/dev/ttyACM0}"
+port="$(find_programmer_port)" || exit $?
 extension="${input_file##*.}"
-extension="${extension,,}"
+extension="$(printf '%s' "$extension" | tr '[:upper:]' '[:lower:]')"
 
 case "$extension" in
   c)
