@@ -1,12 +1,13 @@
+#define F_CPU 1000000UL
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 
 #include <avr/interrupt.h>
 #include <avr/io.h>
-#include <util/delay.h>
-
-#define F_CPU 1000000UL
+#include <util/atomic.h>
+#include <util/delay.h> // ERASE
 
 #define SHORT_DELAY 50
 #define MID_DELAY 300
@@ -23,6 +24,65 @@
 #define BLUE_TONE 523
 
 #define MELODY_END {0, 0}
+
+typedef struct {
+  uint8_t led;
+  uint16_t duration;
+} LightPattern;
+
+typedef struct {
+  uint16_t frequency;
+  uint16_t duration_ms;
+} Note;
+
+typedef struct {
+  const Note *melody;
+  uint8_t curr_note;
+  // the function will contain a sentinel to ensure the
+  // note ends {0, 0}
+} MelodyPlayer;
+
+typedef struct {
+  uint8_t led;
+  uint16_t duration_ms;
+} Light;
+
+typedef struct {
+  const Light *sequence;
+  uint8_t curr_led;
+  uint8_t sequence_length;
+  uint32_t started_at;
+} SequencePlayer;
+
+volatile uint32_t system_ticks = 0;
+
+void timer_init(void) {
+  TCNT1 = 0;
+
+  // CTC mode
+  TCCR1 = (1 << CTC1);
+
+  // 1 MHz / 8 = 125 kHz
+  // 125 timer counts = 1 ms
+  OCR1A = 124;
+  OCR1C = 124;
+
+  TIMSK |= (1 << OCIE1A);
+
+  TCCR1 |= (1 << CS12); // Start Timer1, prescaler /8
+
+  sei(); // Global interrupts on
+}
+
+ISR(TIMER1_COMPA_vect) { system_ticks++; }
+
+uint32_t timer_now(void) {
+  uint32_t ticks;
+
+  ATOMIC_BLOCK(ATOMIC_RESTORESTATE) { ticks = system_ticks; }
+
+  return ticks;
+}
 
 // I need to make a clock using Timer1
 
@@ -77,37 +137,6 @@ int main(void) {
 }
 
 */
-
-typedef struct {
-  uint8_t led;
-  uint16_t duration;
-} LightPattern;
-
-typedef struct {
-  uint16_t frequency;
-  uint16_t duration_ms;
-} Note;
-
-typedef struct {
-  const Note *melody;
-  uint8_t curr_note;
-  // the function will contain a sentinel to ensure the
-  // note ends {0, 0}
-} MelodyPlayer;
-
-typedef struct {
-  uint8_t led;
-  uint16_t duration_ms;
-} Light;
-
-typedef struct {
-  const Light *sequence;
-  uint8_t curr_led;
-  uint8_t sequence_length;
-  uint32_t started_at;
-} SequencePlayer;
-
-volatile uint32_t system_ticks = 0;
 
 uint8_t led_arr[] = {RED_LED, YELLOW_LED, GREEN_LED, BLUE_LED};
 
@@ -167,23 +196,15 @@ Note win_melody[] = {
   MELODY_END,
 };
 
-void timer_init(void) {
-  TCNT1 = 0;
-
-  // CTC mode
-  TCCR1 = (1 << CTC1);
-
-  // 1 MHz / 8 = 125 kHz
-  // 125 timer counts = 1 ms
-  OCR1A = 124;
-
-  TIMSK |= (1 << OCIE1A);
-
-  // Start Timer1, prescaler /8
-  TCCR1 |= (1 << CS12);
-
-  // Global interrupts on
-  sei();
+// PANEL
+void set_led(uint8_t pin, bool state) {
+  if (state) {
+    PORTB &= ~(1 << pin);
+    DDRB |= (1 << pin);
+  } else {
+    DDRB &= ~(1 << pin);
+    PORTB |= (1 << pin);
+  }
 }
 
 void play_sound(uint16_t frequency, uint16_t duration_ms) {
@@ -191,6 +212,8 @@ void play_sound(uint16_t frequency, uint16_t duration_ms) {
     sound_playing = false;
     return;
   }
+
+  uint32_t now = timer_now();
 
   sound_playing = true;
 
@@ -207,12 +230,8 @@ void play_sound(uint16_t frequency, uint16_t duration_ms) {
   OCR0A = (F_CPU / (2UL * 8 * frequency)) - 1;
 
   // Timer hardware is now generating the tone on PB0.
-  while (duration_ms > 0) {
-    _delay_ms(1);
-    duration_ms--;
-  }
-
   // Stop Timer0
+
   TCCR0A = 0;
   TCCR0B = 0;
 
@@ -256,17 +275,6 @@ void sound_stop(void) {
 void play_melody(Note melody[], uint8_t melody_length) {
   for (uint8_t i = 0; i < melody_length; i++) {
     play_sound(melody[i].frequency, melody[i].duration_ms);
-  }
-}
-
-// PANEL
-void set_led(uint8_t pin, bool state) {
-  if (state) {
-    PORTB &= ~(1 << pin);
-    DDRB |= (1 << pin);
-  } else {
-    DDRB &= ~(1 << pin);
-    PORTB |= (1 << pin);
   }
 }
 
@@ -314,27 +322,36 @@ void sequence_start(SequencePlayer *player, const Light *sequence,
   player->sequence = sequence;
   player->sequence_length = sequence_length;
   player->curr_led = 0;
+  player->started_at = timer_now();
 
   set_led(player->sequence->led, true);
 }
 
+// sequence update
 void sequence_update(SequencePlayer *player) {
   if (player->sequence == NULL)
     return;
 
-  Light light = player->sequence[player->curr_led];
-
   if (player->curr_led >= player->sequence_length) {
     player->sequence = NULL;
-    set_led(light.led, false);
     return;
   }
 
-  set_led(light.led, true);
-  _delay_ms(light.duration_ms);
-  set_led(light.led, false);
+  Light light = player->sequence[player->curr_led];
+  uint32_t now = timer_now();
 
-  player->curr_led++;
+  if ((uint32_t)(now - player->started_at) >= light.duration_ms) {
+    set_led(light.led, false);
+    player->curr_led++;
+    player->started_at = now;
+
+    if (player->curr_led < player->sequence_length) {
+      Light next = player->sequence[player->curr_led];
+      set_led(next.led, true);
+    } else {
+      player->sequence = NULL;
+    }
+  }
 }
 
 void sequence_stop(SequencePlayer *player) {
