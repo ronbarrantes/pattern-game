@@ -1,4 +1,5 @@
 #include <stddef.h>
+#include <stdlib.h>
 
 #include "game.h"
 #include "sound.h"
@@ -16,10 +17,21 @@ static const GameOption game_options[] = {
   {BLUE_LED, GAME_MAX_PATTERN_LENGTH, 300},
 };
 
+static const uint8_t game_leds[] = {
+  RED_LED,
+  YELLOW_LED,
+  GREEN_LED,
+  BLUE_LED,
+};
+
+enum { GAME_LED_COUNT = sizeof(game_leds) / sizeof(game_leds[0]) };
+
 static void enter_phase(Game *game, GamePhase phase);
+static void generate_pattern(Game *game);
 static void update_startup(Game *game, Panel *panel,
                            SequencePlayer *sequence_player);
 static void update_select(Game *game, Panel *panel);
+static void update_show_pattern(Game *game, Panel *panel);
 
 void game_init(Game *game) {
   *game = (Game){
@@ -39,6 +51,10 @@ void game_update(Game *game, Panel *panel, SequencePlayer *sequence_player) {
     update_select(game, panel);
     return;
 
+  case GAME_PHASE_SHOW_PATTERN:
+    update_show_pattern(game, panel);
+    return;
+
   default:
     return;
   }
@@ -48,6 +64,15 @@ static void enter_phase(Game *game, GamePhase phase) {
   game->phase = phase;
   game->phase_started = false;
   game->started_at = timer_now();
+}
+
+static void generate_pattern(Game *game) {
+  srand(game->seed);
+
+  for (uint8_t i = 0; i < game->game_length; i++) {
+    uint8_t led_index = (uint8_t)(rand() % GAME_LED_COUNT);
+    game->pattern[i] = game_leds[led_index];
+  }
 }
 
 static void update_startup(Game *game, Panel *panel,
@@ -97,9 +122,55 @@ static void update_select(Game *game, Panel *panel) {
   game->game_length = selected_option->length;
   game->step_duration_ms = selected_option->speed_ms;
   game->seed = (uint16_t)timer_now();
+  generate_pattern(game);
 
   panel_all_off(panel);
   panel_clear_press_events(panel);
 
   enter_phase(game, GAME_PHASE_SHOW_PATTERN);
+}
+
+static void update_show_pattern(Game *game, Panel *panel) {
+  if (!game->phase_started) {
+    game->playback_index = 0;
+    game->light_on = true;
+    game->started_at = timer_now();
+
+    uint8_t led = game->pattern[game->playback_index];
+    panel_set_led(panel, led, true);
+    sound_start(button_tones[led]);
+    game->phase_started = true;
+    return;
+  }
+
+  uint32_t now = timer_now();
+
+  if ((uint32_t)(now - game->started_at) < game->step_duration_ms) {
+    return;
+  }
+
+  game->started_at = now;
+  uint8_t led = game->pattern[game->playback_index];
+
+  if (game->light_on) {
+    panel_set_led(panel, led, false);
+    sound_stop();
+    game->light_on = false;
+    return;
+  }
+
+  game->playback_index++;
+
+  if (game->playback_index >= game->curr_turn) {
+    panel_clear_press_events(panel);
+    game->guess_index = 0;
+    game->light_on = false;
+    enter_phase(game, GAME_PHASE_PLAYER_TURN);
+    return;
+  }
+
+  led = game->pattern[game->playback_index];
+  panel_set_led(panel, led, true);
+  sound_start(button_tones[led]);
+  game->light_on = true;
 }

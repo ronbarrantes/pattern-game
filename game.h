@@ -22,11 +22,13 @@ typedef struct {
   uint8_t pattern[GAME_MAX_PATTERN_LENGTH];
   uint8_t game_length;
   uint8_t curr_turn;
+  uint8_t playback_index;
   uint8_t guess_index;
   uint16_t seed;
   uint16_t step_duration_ms;
   GamePhase phase;
   bool phase_started;
+  bool light_on;
   uint32_t started_at;
 } Game;
 
