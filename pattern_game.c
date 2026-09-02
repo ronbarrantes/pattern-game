@@ -51,18 +51,22 @@ Light test_sequence[] = {
 
 //// MAIN FUNCTION
 int main(void) {
+  Panel panel = {0};
   SequencePlayer sp = {0};
   MelodyPlayer mp = {0};
 
   timer_init();
+  panel_init(&panel);
 
   sequence_start(
-    &sp, test_sequence, sizeof(test_sequence) / sizeof(test_sequence[0]));
+    &sp, &panel, test_sequence,
+    sizeof(test_sequence) / sizeof(test_sequence[0]));
   melody_start(&mp, win_melody);
 
   while (true) {
+    panel_update(&panel);
     melody_update(&mp);
-    sequence_update(&sp);
+    sequence_update(&sp, &panel);
   }
 
   return 0;
