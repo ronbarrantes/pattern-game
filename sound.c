@@ -53,6 +53,18 @@ void sound_stop(void) {
   PORTB &= ~(1 << PB0);
 }
 
+bool sound_toggle(void) {
+  buzzer_enabled = !buzzer_enabled;
+
+  if (!buzzer_enabled) {
+    sound_stop();
+  }
+
+  return buzzer_enabled;
+}
+
+bool sound_is_enabled(void) { return buzzer_enabled; }
+
 void melody_start(MelodyPlayer *player, const Note *melody) {
   player->melody = melody;
   player->curr_note = 0;

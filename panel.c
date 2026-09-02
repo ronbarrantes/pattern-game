@@ -131,6 +131,8 @@ bool panel_take_press(Panel *panel, uint8_t button) {
   return true;
 }
 
+void panel_clear_press_events(Panel *panel) { panel->press_event_mask = 0; }
+
 static void update_pressed_mask(Panel *panel, uint8_t sampled_mask,
                                 uint32_t now) {
   if (sampled_mask != panel->sampled_mask) {

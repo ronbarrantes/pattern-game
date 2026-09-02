@@ -52,6 +52,7 @@ void panel_update(Panel *panel);
 void panel_set_led(Panel *panel, uint8_t led, bool is_on);
 bool panel_is_pressed(const Panel *panel, uint8_t button);
 bool panel_take_press(Panel *panel, uint8_t button);
+void panel_clear_press_events(Panel *panel);
 
 void sequence_start(SequencePlayer *player, Panel *panel,
                     const Light *sequence);
