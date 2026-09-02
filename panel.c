@@ -115,6 +115,8 @@ void panel_set_led(Panel *panel, uint8_t led, bool is_on) {
   }
 }
 
+void panel_all_off(Panel *panel) { panel->led_mask = 0; }
+
 bool panel_is_pressed(const Panel *panel, uint8_t button) {
   uint8_t mask = (uint8_t)(1U << button);
   return (panel->pressed_mask & mask) != 0;

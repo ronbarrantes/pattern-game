@@ -50,6 +50,7 @@ extern const Light win_pattern[];
 void panel_init(Panel *panel);
 void panel_update(Panel *panel);
 void panel_set_led(Panel *panel, uint8_t led, bool is_on);
+void panel_all_off(Panel *panel);
 bool panel_is_pressed(const Panel *panel, uint8_t button);
 bool panel_take_press(Panel *panel, uint8_t button);
 void panel_clear_press_events(Panel *panel);
