@@ -32,6 +32,7 @@ static void update_startup(Game *game, Panel *panel,
                            SequencePlayer *sequence_player);
 static void update_select(Game *game, Panel *panel);
 static void update_show_pattern(Game *game, Panel *panel);
+static void update_player_turn(Game *game, Panel *panel);
 
 void game_init(Game *game) {
   *game = (Game){
@@ -53,6 +54,10 @@ void game_update(Game *game, Panel *panel, SequencePlayer *sequence_player) {
 
   case GAME_PHASE_SHOW_PATTERN:
     update_show_pattern(game, panel);
+    return;
+
+  case GAME_PHASE_PLAYER_TURN:
+    update_player_turn(game, panel);
     return;
 
   default:
@@ -173,4 +178,61 @@ static void update_show_pattern(Game *game, Panel *panel) {
   panel_set_led(panel, led, true);
   sound_start(button_tones[led]);
   game->light_on = true;
+}
+
+static void update_player_turn(Game *game, Panel *panel) {
+  if (!game->phase_started) {
+    game->guess_index = 0;
+    game->active_button = 0;
+    panel_clear_press_events(panel);
+    game->phase_started = true;
+  }
+
+  if (game->active_button != 0) {
+    if (panel_is_pressed(panel, game->active_button)) {
+      return;
+    }
+
+    uint8_t guessed_button = game->active_button;
+
+    panel_set_led(panel, guessed_button, false);
+    panel_clear_press_events(panel);
+    sound_stop();
+    game->active_button = 0;
+
+    if (guessed_button != game->pattern[game->guess_index]) {
+      enter_phase(game, GAME_PHASE_LOSE);
+      return;
+    }
+
+    game->guess_index++;
+
+    if (game->guess_index < game->curr_turn) {
+      return;
+    }
+
+    game->curr_turn++;
+
+    if (game->curr_turn > game->game_length) {
+      enter_phase(game, GAME_PHASE_WIN);
+      return;
+    }
+
+    enter_phase(game, GAME_PHASE_SHOW_PATTERN);
+    return;
+  }
+
+  for (uint8_t i = 0; i < GAME_LED_COUNT; i++) {
+    uint8_t button = game_leds[i];
+
+    if (!panel_take_press(panel, button)) {
+      continue;
+    }
+
+    panel_clear_press_events(panel);
+    game->active_button = button;
+    panel_set_led(panel, button, true);
+    sound_start(button_tones[button]);
+    return;
+  }
 }

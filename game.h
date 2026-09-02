@@ -24,6 +24,7 @@ typedef struct {
   uint8_t curr_turn;
   uint8_t playback_index;
   uint8_t guess_index;
+  uint8_t active_button;
   uint16_t seed;
   uint16_t step_duration_ms;
   GamePhase phase;
