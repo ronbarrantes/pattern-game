@@ -106,9 +106,9 @@ void sequence_stop(SequencePlayer *player) {
   player->sequence = NULL;
 }
 
-// work on this
+// LED and button share a pin. Turning the LED off makes the pin an input and
+// enables its pull-up resistor, so a pressed button reads low.
 bool check_pressed(uint8_t pin) {
   set_led(pin, false);
-  //  delay_ms(5);
   return !(PINB & (1 << pin));
 }
