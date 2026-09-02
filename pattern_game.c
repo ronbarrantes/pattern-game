@@ -47,6 +47,7 @@ Light test_sequence[] = {
   {YELLOW_LED, 500},
   {GREEN_LED, 500},
   {BLUE_LED, 500},
+  LIGHT_END,
 };
 
 //// MAIN FUNCTION
@@ -58,9 +59,7 @@ int main(void) {
   timer_init();
   panel_init(&panel);
 
-  sequence_start(
-    &sp, &panel, test_sequence,
-    sizeof(test_sequence) / sizeof(test_sequence[0]));
+  sequence_start(&sp, &panel, test_sequence);
   melody_start(&mp, win_melody);
 
   while (true) {
