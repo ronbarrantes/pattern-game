@@ -5,6 +5,9 @@
 #include "panel.h"
 #include "timer.h"
 
+#define PANEL_DISPLAY_MS 5
+#define PANEL_SCAN_SETTLE_MS 1
+
 /*
 // panel.c
 panel_init()
@@ -57,6 +60,56 @@ void panel_init(Panel *panel) {
   for (uint8_t i = 0; i < sizeof(led_arr) / sizeof(led_arr[0]); i++) {
     set_led(led_arr[i], false);
   }
+}
+
+void panel_update(Panel *panel) {
+  uint32_t now = timer_now();
+  uint32_t elapsed = now - panel->started_at;
+
+  if (panel->phase == PANEL_PHASE_DISPLAY) {
+    for (uint8_t i = 0; i < sizeof(led_arr) / sizeof(led_arr[0]); i++) {
+      uint8_t led = led_arr[i];
+      bool is_on = (panel->led_mask & (1U << led)) != 0;
+      set_led(led, is_on);
+    }
+
+    if (elapsed < PANEL_DISPLAY_MS) {
+      return;
+    }
+
+    for (uint8_t i = 0; i < sizeof(led_arr) / sizeof(led_arr[0]); i++) {
+      set_led(led_arr[i], false);
+    }
+
+    panel->phase = PANEL_PHASE_SCAN;
+    panel->started_at = now;
+    return;
+  }
+
+  if (elapsed < PANEL_SCAN_SETTLE_MS) {
+    return;
+  }
+
+  uint8_t pins = PINB;
+  panel->pressed_mask = 0;
+
+  for (uint8_t i = 0; i < sizeof(led_arr) / sizeof(led_arr[0]); i++) {
+    uint8_t led = led_arr[i];
+    uint8_t mask = (uint8_t)(1U << led);
+
+    if (!(pins & mask)) {
+      panel->pressed_mask |= mask;
+    }
+  }
+
+  for (uint8_t i = 0; i < sizeof(led_arr) / sizeof(led_arr[0]); i++) {
+    uint8_t led = led_arr[i];
+    uint8_t mask = (uint8_t)(1U << led);
+    set_led(led, (panel->led_mask & mask) != 0);
+  }
+
+  panel->phase = PANEL_PHASE_DISPLAY;
+  panel->started_at = now;
 }
 
 // PANEL
@@ -115,11 +168,4 @@ void sequence_stop(SequencePlayer *player) {
 
   set_led(light.led, false);
   player->sequence = NULL;
-}
-
-// LED and button share a pin. Turning the LED off makes the pin an input and
-// enables its pull-up resistor, so a pressed button reads low.
-bool check_pressed(uint8_t pin) {
-  set_led(pin, false);
-  return !(PINB & (1 << pin));
 }

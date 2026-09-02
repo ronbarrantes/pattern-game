@@ -46,9 +46,9 @@ extern Light lose_pattern[];
 extern Light win_pattern[];
 
 void panel_init(Panel *panel);
+void panel_update(Panel *panel);
 
 void set_led(uint8_t pin, bool state);
-bool check_pressed(uint8_t pin);
 
 void sequence_start(SequencePlayer *player, const Light *sequence,
                     uint8_t sequence_length);
