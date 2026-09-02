@@ -3,7 +3,7 @@
 set -euo pipefail
 
 usage() {
-  echo "Usage: $0 FILE.c|FILE.elf|FILE.hex" >&2
+  echo "Usage: $0 FILE.c [FILE.c ...] | FILE.elf | FILE.hex" >&2
   echo "Override automatic port detection with ATTINY_PORT=/dev/your-port" >&2
 }
 
@@ -42,16 +42,19 @@ find_programmer_port() {
   return 69
 }
 
-if [[ $# -ne 1 ]]; then
+if [[ $# -lt 1 ]]; then
   usage
   exit 64
 fi
 
-input_file="$1"
-if [[ ! -f "$input_file" ]]; then
-  echo "File not found: $input_file" >&2
-  exit 66
-fi
+input_files=("$@")
+
+for input_file in "${input_files[@]}"; do
+  if [[ ! -f "$input_file" ]]; then
+    echo "File not found: $input_file" >&2
+    exit 66
+  fi
+done
 
 if ! command -v avrdude >/dev/null; then
   echo "Missing required command: avrdude" >&2
@@ -61,11 +64,28 @@ fi
 project_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 bin_dir="${project_dir}/bin"
 port="$(find_programmer_port)" || exit $?
+input_file="${input_files[0]}"
 extension="${input_file##*.}"
 extension="$(printf '%s' "$extension" | tr '[:upper:]' '[:lower:]')"
 
+if [[ ${#input_files[@]} -gt 1 && "$extension" != "c" ]]; then
+  echo "Multiple inputs are only supported for C source files." >&2
+  usage
+  exit 64
+fi
+
 case "$extension" in
   c)
+    for source_file in "${input_files[@]}"; do
+      source_extension="${source_file##*.}"
+      source_extension="$(printf '%s' "$source_extension" | tr '[:upper:]' '[:lower:]')"
+
+      if [[ "$source_extension" != "c" ]]; then
+        echo "Expected a C source file, got: $source_file" >&2
+        exit 65
+      fi
+    done
+
     for tool in avr-gcc avr-objcopy avr-size; do
       if ! command -v "$tool" >/dev/null; then
         echo "Missing required command: $tool" >&2
@@ -88,7 +108,7 @@ case "$extension" in
       -ffunction-sections \
       -fdata-sections \
       -Wl,--gc-sections \
-      "$input_file" \
+      "${input_files[@]}" \
       -o "$elf_file"
 
     avr-size --format=avr --mcu=attiny85 "$elf_file"

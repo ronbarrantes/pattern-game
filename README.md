@@ -17,3 +17,9 @@ serial device is connected, select the ArduinoISP explicitly:
 ```sh
 ATTINY_PORT=/dev/cu.usbmodem1101 ./flash.sh practice/led_button.c
 ```
+
+Pass every source file when flashing the full game:
+
+```sh
+./flash.sh pattern_game.c game.c panel.c sound.c timer.c
+```

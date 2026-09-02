@@ -5,6 +5,11 @@
 #include "sound.h"
 #include "timer.h"
 
+#define GAME_LEVEL_FLASH_COUNT 3
+#define GAME_LEVEL_FLASH_MS 100
+#define GAME_ROUND_PAUSE_MS 1000
+#define GAME_RESTART_DELAY_MS 2000
+
 typedef struct {
   uint8_t button;
   uint8_t length;
@@ -31,8 +36,15 @@ static void generate_pattern(Game *game);
 static void update_startup(Game *game, Panel *panel,
                            SequencePlayer *sequence_player);
 static void update_select(Game *game, Panel *panel);
+static void update_confirm_level(Game *game, Panel *panel);
+static void update_round_pause(Game *game, Panel *panel);
 static void update_show_pattern(Game *game, Panel *panel);
 static void update_player_turn(Game *game, Panel *panel);
+static void update_result(Game *game, Panel *panel,
+                          SequencePlayer *sequence_player,
+                          MelodyPlayer *melody_player,
+                          const Light *light_sequence, const Note *melody);
+static void update_restart(Game *game, Panel *panel);
 
 void game_init(Game *game) {
   *game = (Game){
@@ -42,7 +54,8 @@ void game_init(Game *game) {
   };
 }
 
-void game_update(Game *game, Panel *panel, SequencePlayer *sequence_player) {
+void game_update(Game *game, Panel *panel, SequencePlayer *sequence_player,
+                 MelodyPlayer *melody_player) {
   switch (game->phase) {
   case GAME_PHASE_STARTUP:
     update_startup(game, panel, sequence_player);
@@ -52,12 +65,34 @@ void game_update(Game *game, Panel *panel, SequencePlayer *sequence_player) {
     update_select(game, panel);
     return;
 
+  case GAME_PHASE_CONFIRM_LEVEL:
+    update_confirm_level(game, panel);
+    return;
+
+  case GAME_PHASE_ROUND_PAUSE:
+    update_round_pause(game, panel);
+    return;
+
   case GAME_PHASE_SHOW_PATTERN:
     update_show_pattern(game, panel);
     return;
 
   case GAME_PHASE_PLAYER_TURN:
     update_player_turn(game, panel);
+    return;
+
+  case GAME_PHASE_WIN:
+    update_result(game, panel, sequence_player, melody_player, win_pattern,
+                  win_melody);
+    return;
+
+  case GAME_PHASE_LOSE:
+    update_result(game, panel, sequence_player, melody_player, lose_pattern,
+                  lose_melody);
+    return;
+
+  case GAME_PHASE_RESTART:
+    update_restart(game, panel);
     return;
 
   default:
@@ -127,10 +162,62 @@ static void update_select(Game *game, Panel *panel) {
   game->game_length = selected_option->length;
   game->step_duration_ms = selected_option->speed_ms;
   game->seed = (uint16_t)timer_now();
+  game->active_button = selected_option->button;
   generate_pattern(game);
 
   panel_all_off(panel);
   panel_clear_press_events(panel);
+
+  enter_phase(game, GAME_PHASE_CONFIRM_LEVEL);
+}
+
+static void update_confirm_level(Game *game, Panel *panel) {
+  if (!game->phase_started) {
+    game->flash_count = 0;
+    game->light_on = true;
+    game->started_at = timer_now();
+    panel_set_led(panel, game->active_button, true);
+    game->phase_started = true;
+    return;
+  }
+
+  uint32_t now = timer_now();
+
+  if ((uint32_t)(now - game->started_at) < GAME_LEVEL_FLASH_MS) {
+    return;
+  }
+
+  game->started_at = now;
+
+  if (game->light_on) {
+    panel_set_led(panel, game->active_button, false);
+    game->light_on = false;
+    game->flash_count++;
+    return;
+  }
+
+  if (game->flash_count >= GAME_LEVEL_FLASH_COUNT) {
+    game->active_button = 0;
+    enter_phase(game, GAME_PHASE_SHOW_PATTERN);
+    return;
+  }
+
+  panel_set_led(panel, game->active_button, true);
+  game->light_on = true;
+}
+
+static void update_round_pause(Game *game, Panel *panel) {
+  if (!game->phase_started) {
+    panel_all_off(panel);
+    panel_clear_press_events(panel);
+    game->phase_started = true;
+  }
+
+  uint32_t now = timer_now();
+
+  if ((uint32_t)(now - game->started_at) < GAME_ROUND_PAUSE_MS) {
+    return;
+  }
 
   enter_phase(game, GAME_PHASE_SHOW_PATTERN);
 }
@@ -218,7 +305,7 @@ static void update_player_turn(Game *game, Panel *panel) {
       return;
     }
 
-    enter_phase(game, GAME_PHASE_SHOW_PATTERN);
+    enter_phase(game, GAME_PHASE_ROUND_PAUSE);
     return;
   }
 
@@ -235,4 +322,50 @@ static void update_player_turn(Game *game, Panel *panel) {
     sound_start(button_tones[button]);
     return;
   }
+}
+
+static void update_result(Game *game, Panel *panel,
+                          SequencePlayer *sequence_player,
+                          MelodyPlayer *melody_player,
+                          const Light *light_sequence, const Note *melody) {
+  if (!game->phase_started) {
+    panel_all_off(panel);
+    panel_clear_press_events(panel);
+    sequence_start(sequence_player, panel, light_sequence);
+    melody_start(melody_player, melody);
+    game->phase_started = true;
+    return;
+  }
+
+  if (sequence_is_playing(sequence_player) ||
+      melody_is_playing(melody_player)) {
+    return;
+  }
+
+  enter_phase(game, GAME_PHASE_RESTART);
+}
+
+static void update_restart(Game *game, Panel *panel) {
+  if (!game->phase_started) {
+    panel_all_off(panel);
+    panel_clear_press_events(panel);
+    sound_stop();
+    game->started_at = timer_now();
+    game->phase_started = true;
+    return;
+  }
+
+  uint32_t now = timer_now();
+
+  if ((uint32_t)(now - game->started_at) < GAME_RESTART_DELAY_MS) {
+    return;
+  }
+
+  game->curr_turn = 1;
+  game->playback_index = 0;
+  game->guess_index = 0;
+  game->active_button = 0;
+  game->light_on = false;
+
+  enter_phase(game, GAME_PHASE_SELECT);
 }

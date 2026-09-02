@@ -19,7 +19,7 @@ int main(void) {
     panel_update(&panel);
     melody_update(&melody_player);
     sequence_update(&sequence_player, &panel);
-    game_update(&game, &panel, &sequence_player);
+    game_update(&game, &panel, &sequence_player, &melody_player);
   }
 
   return 0;

@@ -102,3 +102,7 @@ void melody_update(MelodyPlayer *player) {
     sound_start(next.frequency);
   }
 }
+
+bool melody_is_playing(const MelodyPlayer *player) {
+  return player->melody != NULL;
+}

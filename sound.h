@@ -33,5 +33,6 @@ bool sound_is_enabled(void);
 
 void melody_start(MelodyPlayer *player, const Note *melody);
 void melody_update(MelodyPlayer *player);
+bool melody_is_playing(const MelodyPlayer *player);
 
 #endif
