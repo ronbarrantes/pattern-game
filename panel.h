@@ -47,13 +47,13 @@ extern Light win_pattern[];
 
 void panel_init(Panel *panel);
 void panel_update(Panel *panel);
+void panel_set_led(Panel *panel, uint8_t led, bool is_on);
+bool panel_is_pressed(const Panel *panel, uint8_t button);
 
-void set_led(uint8_t pin, bool state);
+void sequence_start(SequencePlayer *player, Panel *panel,
+                    const Light *sequence, uint8_t sequence_length);
 
-void sequence_start(SequencePlayer *player, const Light *sequence,
-                    uint8_t sequence_length);
-
-void sequence_update(SequencePlayer *player);
-void sequence_stop(SequencePlayer *player);
+void sequence_update(SequencePlayer *player, Panel *panel);
+void sequence_stop(SequencePlayer *player, Panel *panel);
 
 #endif

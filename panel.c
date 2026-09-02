@@ -8,6 +8,8 @@
 #define PANEL_DISPLAY_MS 5
 #define PANEL_SCAN_SETTLE_MS 1
 
+static void set_led_pin(uint8_t pin, bool state);
+
 /*
 // panel.c
 panel_init()
@@ -58,7 +60,7 @@ void panel_init(Panel *panel) {
   panel->started_at = timer_now();
 
   for (uint8_t i = 0; i < sizeof(led_arr) / sizeof(led_arr[0]); i++) {
-    set_led(led_arr[i], false);
+    set_led_pin(led_arr[i], false);
   }
 }
 
@@ -70,7 +72,7 @@ void panel_update(Panel *panel) {
     for (uint8_t i = 0; i < sizeof(led_arr) / sizeof(led_arr[0]); i++) {
       uint8_t led = led_arr[i];
       bool is_on = (panel->led_mask & (1U << led)) != 0;
-      set_led(led, is_on);
+      set_led_pin(led, is_on);
     }
 
     if (elapsed < PANEL_DISPLAY_MS) {
@@ -78,7 +80,7 @@ void panel_update(Panel *panel) {
     }
 
     for (uint8_t i = 0; i < sizeof(led_arr) / sizeof(led_arr[0]); i++) {
-      set_led(led_arr[i], false);
+      set_led_pin(led_arr[i], false);
     }
 
     panel->phase = PANEL_PHASE_SCAN;
@@ -105,15 +107,30 @@ void panel_update(Panel *panel) {
   for (uint8_t i = 0; i < sizeof(led_arr) / sizeof(led_arr[0]); i++) {
     uint8_t led = led_arr[i];
     uint8_t mask = (uint8_t)(1U << led);
-    set_led(led, (panel->led_mask & mask) != 0);
+    set_led_pin(led, (panel->led_mask & mask) != 0);
   }
 
   panel->phase = PANEL_PHASE_DISPLAY;
   panel->started_at = now;
 }
 
+void panel_set_led(Panel *panel, uint8_t led, bool is_on) {
+  uint8_t mask = (uint8_t)(1U << led);
+
+  if (is_on) {
+    panel->led_mask |= mask;
+  } else {
+    panel->led_mask &= (uint8_t)~mask;
+  }
+}
+
+bool panel_is_pressed(const Panel *panel, uint8_t button) {
+  uint8_t mask = (uint8_t)(1U << button);
+  return (panel->pressed_mask & mask) != 0;
+}
+
 // PANEL
-void set_led(uint8_t pin, bool state) {
+static void set_led_pin(uint8_t pin, bool state) {
   if (state) {
     PORTB &= ~(1 << pin);
     DDRB |= (1 << pin);
@@ -123,18 +140,18 @@ void set_led(uint8_t pin, bool state) {
   }
 }
 
-void sequence_start(SequencePlayer *player, const Light *sequence,
-                    uint8_t sequence_length) {
+void sequence_start(SequencePlayer *player, Panel *panel,
+                    const Light *sequence, uint8_t sequence_length) {
   player->sequence = sequence;
   player->sequence_length = sequence_length;
   player->curr_led = 0;
   player->started_at = timer_now();
 
-  set_led(player->sequence->led, true);
+  panel_set_led(panel, player->sequence->led, true);
 }
 
 // sequence update
-void sequence_update(SequencePlayer *player) {
+void sequence_update(SequencePlayer *player, Panel *panel) {
   if (player->sequence == NULL)
     return;
 
@@ -147,25 +164,25 @@ void sequence_update(SequencePlayer *player) {
   uint32_t now = timer_now();
 
   if ((uint32_t)(now - player->started_at) >= light.duration_ms) {
-    set_led(light.led, false);
+    panel_set_led(panel, light.led, false);
     player->curr_led++;
     player->started_at = now;
 
     if (player->curr_led < player->sequence_length) {
       Light next = player->sequence[player->curr_led];
-      set_led(next.led, true);
+      panel_set_led(panel, next.led, true);
     } else {
       player->sequence = NULL;
     }
   }
 }
 
-void sequence_stop(SequencePlayer *player) {
+void sequence_stop(SequencePlayer *player, Panel *panel) {
   if (player->sequence == NULL)
     return;
 
   Light light = player->sequence[player->curr_led];
 
-  set_led(light.led, false);
+  panel_set_led(panel, light.led, false);
   player->sequence = NULL;
 }
