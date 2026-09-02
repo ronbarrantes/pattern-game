@@ -24,6 +24,7 @@ avr-gcc \
   -fdata-sections \
   -Wl,--gc-sections \
   "${project_dir}/pattern_game.c" \
+  "${project_dir}/game.c" \
   "${project_dir}/panel.c" \
   "${project_dir}/sound.c" \
   "${project_dir}/timer.c" \

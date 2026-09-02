@@ -3,6 +3,7 @@
 #include <avr/io.h>
 #include <stdbool.h>
 
+#include "game.h"
 #include "panel.h"
 #include "sound.h"
 #include "timer.h"
@@ -52,11 +53,13 @@ Light test_sequence[] = {
 
 //// MAIN FUNCTION
 int main(void) {
+  Game game = {0};
   Panel panel = {0};
   SequencePlayer sp = {0};
   MelodyPlayer mp = {0};
 
   timer_init();
+  game_init(&game);
   panel_init(&panel);
 
   sequence_start(&sp, &panel, test_sequence);
