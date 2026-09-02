@@ -14,6 +14,18 @@
 #define MID_DELAY 300
 #define LONG_DELAY 500
 
+typedef enum {
+  PANEL_PHASE_DISPLAY = 0,
+  PANEL_PHASE_SCAN = 1,
+} PanelPhase;
+
+typedef struct {
+  uint8_t led_mask;
+  uint8_t pressed_mask;
+  PanelPhase phase;
+  uint32_t started_at;
+} Panel;
+
 // Panel
 typedef struct {
   uint8_t led;
@@ -32,6 +44,8 @@ extern uint8_t led_arr[];
 extern Light startup_pattern[];
 extern Light lose_pattern[];
 extern Light win_pattern[];
+
+void panel_init(Panel *panel);
 
 void set_led(uint8_t pin, bool state);
 bool check_pressed(uint8_t pin);

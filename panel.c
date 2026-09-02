@@ -48,6 +48,17 @@ Light win_pattern[] = {
   {YELLOW_LED, SHORT_DELAY},
 };
 
+void panel_init(Panel *panel) {
+  panel->led_mask = 0;
+  panel->pressed_mask = 0;
+  panel->phase = PANEL_PHASE_DISPLAY;
+  panel->started_at = timer_now();
+
+  for (uint8_t i = 0; i < sizeof(led_arr) / sizeof(led_arr[0]); i++) {
+    set_led(led_arr[i], false);
+  }
+}
+
 // PANEL
 void set_led(uint8_t pin, bool state) {
   if (state) {
