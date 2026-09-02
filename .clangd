@@ -11,3 +11,7 @@ CompileFlags:
     - "-DF_CPU=1000000UL"
     - "-Os"
     - "-D__AVR_ATtiny85__"
+
+Diagnostics:
+  Suppress:
+    - "-Wunknown-attributes"
