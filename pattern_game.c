@@ -43,14 +43,6 @@ int main(void) {
 
 */
 
-Light test_sequence[] = {
-  {RED_LED, 500},
-  {YELLOW_LED, 500},
-  {GREEN_LED, 500},
-  {BLUE_LED, 500},
-  LIGHT_END,
-};
-
 //// MAIN FUNCTION
 int main(void) {
   Game game = {0};
@@ -62,13 +54,11 @@ int main(void) {
   game_init(&game);
   panel_init(&panel);
 
-  sequence_start(&sp, &panel, test_sequence);
-  melody_start(&mp, win_melody);
-
   while (true) {
     panel_update(&panel);
     melody_update(&mp);
     sequence_update(&sp, &panel);
+    game_update(&game, &panel, &sp);
   }
 
   return 0;

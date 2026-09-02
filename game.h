@@ -1,7 +1,10 @@
 #ifndef GAME_H
 #define GAME_H
 
+#include <stdbool.h>
 #include <stdint.h>
+
+#include "panel.h"
 
 #define GAME_MAX_PATTERN_LENGTH 20
 
@@ -28,9 +31,11 @@ typedef struct {
   uint16_t seed;
   uint16_t step_duration_ms;
   GamePhase phase;
+  bool phase_started;
   uint32_t started_at;
 } Game;
 
 void game_init(Game *game);
+void game_update(Game *game, Panel *panel, SequencePlayer *sequence_player);
 
 #endif
