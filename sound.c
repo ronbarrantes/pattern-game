@@ -17,6 +17,17 @@ uint16_t button_tones[] = {
   GREEN_TONE,
 };
 
+Note startup_melody[] = {
+  {RED_TONE, 100},
+  {YELLOW_TONE, 100},
+  {GREEN_TONE, 100},
+  {BLUE_TONE, 100},
+  {GREEN_TONE, 100},
+  {YELLOW_TONE, 100},
+  {RED_TONE, 100},
+  MELODY_END,
+};
+
 Note lose_melody[] = {
   {BLUE_TONE, 150},
   {GREEN_TONE, 150},

@@ -23,6 +23,7 @@ typedef struct {
 } MelodyPlayer;
 
 extern uint16_t button_tones[];
+extern Note startup_melody[];
 extern Note lose_melody[];
 extern Note win_melody[];
 
