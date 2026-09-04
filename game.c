@@ -10,6 +10,7 @@
 #define GAME_ROUND_PAUSE_MS 1000
 #define GAME_RESTART_DELAY_MS 2000
 #define GAME_SELECT_BLINK_MS 200
+#define GAME_SOUND_PREVIEW_MS 100
 
 typedef struct {
   uint8_t button;
@@ -84,13 +85,13 @@ void game_update(Game *game, Panel *panel, SequencePlayer *sequence_player,
     return;
 
   case GAME_PHASE_WIN:
-    update_result(game, panel, sequence_player, melody_player, win_pattern,
-                  win_melody);
+    update_result(
+      game, panel, sequence_player, melody_player, win_pattern, win_melody);
     return;
 
   case GAME_PHASE_LOSE:
-    update_result(game, panel, sequence_player, melody_player, lose_pattern,
-                  lose_melody);
+    update_result(
+      game, panel, sequence_player, melody_player, lose_pattern, lose_melody);
     return;
 
   case GAME_PHASE_RESTART:
@@ -143,6 +144,7 @@ static void update_select(Game *game, Panel *panel) {
     panel_set_led(panel, GREEN_LED, true);
     panel_set_led(panel, BLUE_LED, true);
     game->light_on = true;
+    game->sound_preview_playing = false;
     game->started_at = timer_now();
     game->phase_started = true;
   }
@@ -157,9 +159,25 @@ static void update_select(Game *game, Panel *panel) {
     game->started_at = now;
   }
 
+  if (game->sound_preview_playing &&
+      (uint32_t)(now - game->sound_preview_started_at) >=
+        GAME_SOUND_PREVIEW_MS) {
+    sound_stop();
+    game->sound_preview_playing = false;
+  }
+
   if (panel_take_press(panel, RED_LED)) {
     bool sound_enabled = sound_toggle();
     panel_set_led(panel, RED_LED, sound_enabled);
+
+    if (sound_enabled) {
+      sound_start(RED_TONE);
+      game->sound_preview_started_at = now;
+      game->sound_preview_playing = true;
+    } else {
+      game->sound_preview_playing = false;
+    }
+
     return;
   }
 
@@ -194,6 +212,7 @@ static void update_confirm_level(Game *game, Panel *panel) {
     game->light_on = true;
     game->started_at = timer_now();
     panel_set_led(panel, game->active_button, true);
+    sound_start(button_tones[game->active_button]);
     game->phase_started = true;
     return;
   }
@@ -208,6 +227,7 @@ static void update_confirm_level(Game *game, Panel *panel) {
 
   if (game->light_on) {
     panel_set_led(panel, game->active_button, false);
+    sound_stop();
     game->light_on = false;
     game->flash_count++;
     return;

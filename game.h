@@ -31,9 +31,11 @@ typedef struct {
   uint8_t flash_count;
   uint16_t seed;
   uint16_t step_duration_ms;
+  uint32_t sound_preview_started_at;
   GamePhase phase;
   bool phase_started;
   bool light_on;
+  bool sound_preview_playing;
   uint32_t started_at;
 } Game;
 
