@@ -69,7 +69,6 @@ void panel_init(Panel *panel) {
 
 void panel_update(Panel *panel) {
   uint32_t now = timer_now();
-  uint32_t elapsed = now - panel->started_at;
 
   if (panel->phase == PANEL_PHASE_DISPLAY) {
     for (uint8_t i = 0; i < sizeof(led_arr) / sizeof(led_arr[0]); i++) {
@@ -78,7 +77,7 @@ void panel_update(Panel *panel) {
       set_led_pin(led, is_on);
     }
 
-    if (elapsed < PANEL_DISPLAY_MS) {
+    if (!timer_has_elapsed(panel->started_at, now, PANEL_DISPLAY_MS)) {
       return;
     }
 
@@ -91,7 +90,7 @@ void panel_update(Panel *panel) {
     return;
   }
 
-  if (elapsed < PANEL_SCAN_SETTLE_MS) {
+  if (!timer_has_elapsed(panel->started_at, now, PANEL_SCAN_SETTLE_MS)) {
     return;
   }
 
@@ -147,7 +146,8 @@ static void update_pressed_mask(Panel *panel, uint8_t sampled_mask,
     return;
   }
 
-  if ((uint32_t)(now - panel->debounce_started_at) < PANEL_DEBOUNCE_MS) {
+  if (!timer_has_elapsed(panel->debounce_started_at, now,
+                         PANEL_DEBOUNCE_MS)) {
     return;
   }
 
@@ -197,7 +197,7 @@ void sequence_update(SequencePlayer *player, Panel *panel) {
   Light light = player->sequence[player->curr_led];
   uint32_t now = timer_now();
 
-  if ((uint32_t)(now - player->started_at) >= light.duration_ms) {
+  if (timer_has_elapsed(player->started_at, now, light.duration_ms)) {
     player->started_at = now;
 
     if (player->light_on) {

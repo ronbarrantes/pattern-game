@@ -11,6 +11,7 @@
 #define GAME_RESTART_DELAY_MS 2000
 #define GAME_SELECT_BLINK_MS 200
 #define GAME_SOUND_PREVIEW_MS 100
+#define GAME_RESULT_PAUSE_MS 200
 #define GAME_STANDARD_PAUSE_MS 500
 
 typedef struct {
@@ -117,7 +118,8 @@ static bool game_is_paused(Game *game) {
     return false;
   }
 
-  if ((uint32_t)(timer_now() - game->started_at) < game->pause_duration_ms) {
+  if (!timer_has_elapsed(game->started_at, timer_now(),
+                         game->pause_duration_ms)) {
     return true;
   }
 
@@ -170,7 +172,7 @@ static void update_select(Game *game, Panel *panel) {
 
   uint32_t now = timer_now();
 
-  if ((uint32_t)(now - game->started_at) >= GAME_SELECT_BLINK_MS) {
+  if (timer_has_elapsed(game->started_at, now, GAME_SELECT_BLINK_MS)) {
     game->light_on = !game->light_on;
     panel_set_led(panel, YELLOW_LED, game->light_on);
     panel_set_led(panel, GREEN_LED, game->light_on);
@@ -179,8 +181,8 @@ static void update_select(Game *game, Panel *panel) {
   }
 
   if (game->sound_preview_playing &&
-      (uint32_t)(now - game->sound_preview_started_at) >=
-        GAME_SOUND_PREVIEW_MS) {
+      timer_has_elapsed(game->sound_preview_started_at, now,
+                        GAME_SOUND_PREVIEW_MS)) {
     sound_stop();
     game->sound_preview_playing = false;
   }
@@ -238,7 +240,7 @@ static void update_confirm_level(Game *game, Panel *panel) {
 
   uint32_t now = timer_now();
 
-  if ((uint32_t)(now - game->started_at) < GAME_LEVEL_FLASH_MS) {
+  if (!timer_has_elapsed(game->started_at, now, GAME_LEVEL_FLASH_MS)) {
     return;
   }
 
@@ -280,7 +282,7 @@ static void update_show_pattern(Game *game, Panel *panel) {
 
   uint32_t now = timer_now();
 
-  if ((uint32_t)(now - game->started_at) < game->step_duration_ms) {
+  if (!timer_has_elapsed(game->started_at, now, game->step_duration_ms)) {
     return;
   }
 
@@ -331,7 +333,7 @@ static void update_player_turn(Game *game, Panel *panel) {
 
     if (guessed_button != game->pattern[game->guess_index]) {
       enter_phase(game, GAME_PHASE_LOSE);
-      game_pause(game, GAME_STANDARD_PAUSE_MS);
+      game_pause(game, GAME_RESULT_PAUSE_MS);
       return;
     }
 
@@ -345,7 +347,7 @@ static void update_player_turn(Game *game, Panel *panel) {
 
     if (game->curr_turn > game->game_length) {
       enter_phase(game, GAME_PHASE_WIN);
-      game_pause(game, GAME_STANDARD_PAUSE_MS);
+      game_pause(game, GAME_RESULT_PAUSE_MS);
       return;
     }
 

@@ -1,8 +1,9 @@
-#include <stdint.h>
 #include <util/atomic.h>
 
 #include <avr/interrupt.h>
 #include <avr/io.h>
+
+#include "timer.h"
 
 volatile uint32_t system_ticks = 0;
 

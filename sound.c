@@ -98,7 +98,7 @@ void melody_update(MelodyPlayer *player) {
   Note note = player->melody[player->curr_note];
   uint32_t now = timer_now();
 
-  if ((uint32_t)(now - player->started_at) >= note.duration_ms) {
+  if (timer_has_elapsed(player->started_at, now, note.duration_ms)) {
     sound_stop();
     player->curr_note++;
 
