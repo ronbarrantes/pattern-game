@@ -11,6 +11,7 @@
 #define GAME_RESTART_DELAY_MS 2000
 #define GAME_SELECT_BLINK_MS 200
 #define GAME_SOUND_PREVIEW_MS 100
+#define GAME_PATTERN_PAUSE_MS 500
 
 typedef struct {
   uint8_t button;
@@ -34,10 +35,12 @@ static const uint8_t game_leds[] = {
 enum { GAME_LED_COUNT = sizeof(game_leds) / sizeof(game_leds[0]) };
 
 static void enter_phase(Game *game, GamePhase phase);
+static void enter_transition_pause(Game *game, GamePhase next_phase);
 static void generate_pattern(Game *game);
 static void update_startup(Game *game, Panel *panel,
                            SequencePlayer *sequence_player,
                            MelodyPlayer *melody_player);
+static void update_transition_pause(Game *game, Panel *panel);
 static void update_select(Game *game, Panel *panel);
 static void update_confirm_level(Game *game, Panel *panel);
 static void update_round_pause(Game *game, Panel *panel);
@@ -62,6 +65,10 @@ void game_update(Game *game, Panel *panel, SequencePlayer *sequence_player,
   switch (game->phase) {
   case GAME_PHASE_STARTUP:
     update_startup(game, panel, sequence_player, melody_player);
+    return;
+
+  case GAME_PHASE_TRANSITION_PAUSE:
+    update_transition_pause(game, panel);
     return;
 
   case GAME_PHASE_SELECT:
@@ -109,6 +116,11 @@ static void enter_phase(Game *game, GamePhase phase) {
   game->started_at = timer_now();
 }
 
+static void enter_transition_pause(Game *game, GamePhase next_phase) {
+  game->next_phase = next_phase;
+  enter_phase(game, GAME_PHASE_TRANSITION_PAUSE);
+}
+
 static void generate_pattern(Game *game) {
   srand(game->seed);
 
@@ -133,7 +145,21 @@ static void update_startup(Game *game, Panel *panel,
     return;
   }
 
-  enter_phase(game, GAME_PHASE_SELECT);
+  enter_transition_pause(game, GAME_PHASE_SELECT);
+}
+
+static void update_transition_pause(Game *game, Panel *panel) {
+  if (!game->phase_started) {
+    panel_all_off(panel);
+    panel_clear_press_events(panel);
+    game->phase_started = true;
+  }
+
+  if ((uint32_t)(timer_now() - game->started_at) < GAME_PATTERN_PAUSE_MS) {
+    return;
+  }
+
+  enter_phase(game, game->next_phase);
 }
 
 static void update_select(Game *game, Panel *panel) {
@@ -324,7 +350,7 @@ static void update_player_turn(Game *game, Panel *panel) {
     game->active_button = 0;
 
     if (guessed_button != game->pattern[game->guess_index]) {
-      enter_phase(game, GAME_PHASE_LOSE);
+      enter_transition_pause(game, GAME_PHASE_LOSE);
       return;
     }
 
@@ -337,7 +363,7 @@ static void update_player_turn(Game *game, Panel *panel) {
     game->curr_turn++;
 
     if (game->curr_turn > game->game_length) {
-      enter_phase(game, GAME_PHASE_WIN);
+      enter_transition_pause(game, GAME_PHASE_WIN);
       return;
     }
 

@@ -11,6 +11,7 @@
 
 typedef enum {
   GAME_PHASE_STARTUP = 0,
+  GAME_PHASE_TRANSITION_PAUSE,
   GAME_PHASE_SELECT,
   GAME_PHASE_CONFIRM_LEVEL,
   GAME_PHASE_ROUND_PAUSE,
@@ -33,6 +34,7 @@ typedef struct {
   uint16_t step_duration_ms;
   uint32_t sound_preview_started_at;
   GamePhase phase;
+  GamePhase next_phase;
   bool phase_started;
   bool light_on;
   bool sound_preview_playing;
